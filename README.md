@@ -1,3 +1,13 @@
+# Ageing Luxembourg Hackathon Deliverable
+
+This repository now hosts the datasets and interactive dashboard prepared for the 2025 STATEC Hackathon (“Ageing Luxembourg”). Key highlights:
+
+- `scripts/` contains SDMX utilities to pull census data from LUSTAT and prepare dashboard-ready aggregates (`sdmx_fetch_data.py`, `prepare_dashboard_data.py`).
+- `data/` stores the extracted CSV/JSON files, while the React dashboard lives under `dashboard/`.
+- See `dashboard/README.md` for step-by-step instructions to refresh the data and run the app locally.
+
+The original BESSER-PEARL template documentation is kept below for reference.
+
 # Template for BESSER-PEARL Organization Repositories
 
 This Github template provides a collection of base files and configuration recommendations for kick-starting a new project in the BESSER-PEARL organization.
