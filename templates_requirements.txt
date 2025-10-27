@@ -1,0 +1,11 @@
+# Pin only what you actually use; keep it lean for quick installs.
+# Example scientific stack:
+numpy
+pandas
+pyarrow
+matplotlib
+jupyterlab
+# Add more as needed, e.g.:
+# scikit-learn
+# statsmodels
+# plotly

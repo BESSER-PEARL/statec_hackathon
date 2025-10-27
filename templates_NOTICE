@@ -1,0 +1,8 @@
+NOTICE
+
+This project may include or depend on third‑party components. Where required by their licenses, attributions and notices should be listed here, for example:
+
+- ComponentName — Copyright (c) 20XX The Authors — License: MIT — https://example.com
+- AnotherLib — Copyright (c) 20XX Organization — License: Apache-2.0 — https://example.com
+
+If your chosen license (e.g., Apache-2.0) requires preserving this NOTICE, keep it up to date.
