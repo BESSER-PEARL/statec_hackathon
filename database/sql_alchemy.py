@@ -21,15 +21,17 @@ class Observation(Base):
     __tablename__ = "observation"
     id: Mapped[int] = mapped_column(primary_key=True)
     value: Mapped[float] = mapped_column(Float)
-    category_id: Mapped[int] = mapped_column(ForeignKey("category.id"), nullable=False)
     dimension_id: Mapped[int] = mapped_column(ForeignKey("dimension.id"), nullable=False)
+    category_id: Mapped[int] = mapped_column(ForeignKey("category.id"), nullable=False)
 
 class Category(Base):
     __tablename__ = "category"
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(100))
-    parent_id: Mapped[int] = mapped_column(ForeignKey("category.id"))
+    code: Mapped[str] = mapped_column(String(100))
+    label: Mapped[str] = mapped_column(String(100))
     data_table_id: Mapped[int] = mapped_column(ForeignKey("datatable.id"), nullable=False)
+    parent_id: Mapped[int] = mapped_column(ForeignKey("category.id"))
 
 class Dimension(Base):
     __tablename__ = "dimension"
@@ -47,14 +49,14 @@ class DataTable(Base):
 
 
 #--- Relationships of the observation table
-Observation.category: Mapped["Category"] = relationship("Category", back_populates="data", foreign_keys=[Observation.category_id])
 Observation.dimension: Mapped["Dimension"] = relationship("Dimension", back_populates="obs", foreign_keys=[Observation.dimension_id])
+Observation.category: Mapped["Category"] = relationship("Category", back_populates="data", foreign_keys=[Observation.category_id])
 
 #--- Relationships of the category table
+Category.data_table: Mapped["DataTable"] = relationship("DataTable", back_populates="category", foreign_keys=[Category.data_table_id])
 Category.data: Mapped[List["Observation"]] = relationship("Observation", back_populates="category", foreign_keys=[Observation.category_id])
 Category.sub: Mapped[List["Category"]] = relationship("Category", back_populates="parent", foreign_keys=[Category.parent_id])
 Category.parent: Mapped["Category"] = relationship("Category", back_populates="sub", foreign_keys=[Category.parent_id])
-Category.data_table: Mapped["DataTable"] = relationship("DataTable", back_populates="category", foreign_keys=[Category.data_table_id])
 
 #--- Relationships of the dimension table
 Dimension.obs: Mapped[List["Observation"]] = relationship("Observation", back_populates="dimension", foreign_keys=[Observation.dimension_id])
