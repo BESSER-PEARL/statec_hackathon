@@ -6,5 +6,16 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      "/lustat": {
+        target: "https://lustat.statec.lu",
+        changeOrigin: true,
+        secure: true,
+        headers: {
+          Origin: "https://lustat.statec.lu",
+        },
+        rewrite: (path) => path.replace(/^\/lustat/, ""),
+      },
+    },
   },
 });

@@ -1,50 +1,56 @@
 # Ageing Luxembourg Dashboard
 
-Interactive dashboard prepared for the STATEC Hackathon 2025 (‚ÄúAgeing Luxembourg‚Äù theme). It distils openly available census data into key indicators on population ageing, labour-force pressure, and narrative takeaways for policymakers.
+Interactive React dashboard prepared for the STATEC Hackathon 2025 (ìAgeing Luxembourgî).
+It pulls fresh figures straight from STATECís LUSTAT SDMX APIóno intermediate CSV or JSON dumps required.
+
+## How it works
+
+- The app requests three official dataflows:
+  - `DSD_CENSUS_GROUP1_3@DF_B1600` ∑ legal marital status by sex & age (population structure)
+  - `DF_B3109` ∑ employment rate of persons aged 15ñ64 (labour market pressure)
+  - `DF_C2206` ∑ benefits from the long-term care insurance (social protection demand)
+- `src/lib/sdmx.js` converts SDMX series/observations into flat records.
+- `src/App.jsx` aggregates the records into KPIs, stacked bars, line & area charts, and policy highlights.
 
 ## Prerequisites
 
-- Node.js ‚â• 18
-- Python ‚â• 3.10 (to refresh the datasets)
+- Node.js = 18
+- (Optional) Python = 3.10 if you want to reuse the SDMX helper scripts for offline experiments.
 
-## 1. Refresh the data extract
-
-```bash
-# 1a. Pull the SDMX extract for age-by-sex population counts
-python scripts/sdmx_fetch_data.py \
-  --flow DSD_CENSUS_GROUP1_3@DF_B1600 \
-  --structure census_structure.json \
-  --dim SEX=_T,M,F \
-  --dim AGE=Y_LT15,Y15T19,Y20T24,Y25T29,Y30T34,Y35T39,Y40T44,Y45T49,Y50T54,Y55T59,Y60T64,Y65T69,Y70T74,Y75T79,Y80T84,Y85T89,Y90T94,Y95T99,Y_GE100 \
-  --dim LMS=_T \
-  --output data/census_age_detail.csv
-
-# 1b. Aggregate into dashboard-ready JSON (copies into dashboard/public/data/)
-python scripts/prepare_dashboard_data.py
-```
-
-## 2. Install dependencies
+## Running the dashboard locally
 
 ```bash
 cd dashboard
 npm install
-```
-
-## 3. Run the dashboard locally
-
-```bash
 npm run dev
-# visit http://localhost:5173
+# Visit http://localhost:5173
 ```
 
-## 4. Build for production
+### Avoiding CORS issues
+
+The dev server ships with a proxy at `/lustat` that forwards to `https://lustat.statec.lu`. You have two options:
+
+1. **Use the proxy (default in dev):**
+   - Create a `.env.local` file inside `dashboard/` with `VITE_LUSTAT_BASE=/lustat`.
+   - `npm run dev` will call `/lustat/rest/data/...`, which Vite proxies to LUSTAT.
+
+2. **Call the API directly:**
+   - Set `VITE_LUSTAT_BASE=https://lustat.statec.lu` in `.env.local`.
+   - Ensure the browser environment is allowed to reach the LUSTAT domain (CORS must be enabled on the target deployment).
+
+Build for production with:
 
 ```bash
 npm run build
-# outputs to dashboard/dist
+# Outputs to dashboard/dist
 ```
 
-## Notes
+## Adding more datasets
 
-- The dashboard currently focuses on the 2021 census (legal marital status by sex and age).
-- Additional indicators can be layered by extending the Python preparation scripts and updating the front-end charts.
+1. Look up the SDMX dataflow and key in the hackathon appendix or the LUSTAT API explorer.
+2. Duplicate one of the loaders in `src/App.jsx` (e.g., `loadEmploymentRows`) with the new flow/key.
+3. Transform the rows and connect them to fresh Recharts visualisations.
+
+## Optional: Offline data snapshots
+
+The Python utilities in `scripts/` still work if you prefer local CSV/JSON extracts (`sdmx_fetch_data.py`, `prepare_dashboard_data.py`), but the dashboard no longer depends on them.
