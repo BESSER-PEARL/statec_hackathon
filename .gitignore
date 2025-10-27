@@ -7,3 +7,5 @@ Pipfile.lock
 besser_venv/
 .env
 venv/
+__pycache__/
+node_modules/
