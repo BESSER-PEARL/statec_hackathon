@@ -1,2 +1,8 @@
 # Sphinx documentation
 docs/_build/
+
+# virtual env
+Pipfile
+Pipfile.lock
+besser_venv/
+.env
