@@ -62,5 +62,27 @@ def explain_observation(obs_id: int) -> None:
             print(f"  • Time Period: {obs.time_period}")
         print()
 
+def fetch_all_datatables() -> str:
+    """Fetch and return all datatables with their name and description as a single string."""
+    with SessionLocal() as session:
+        datatables = session.query(DataTable).all()
+
+        if not datatables:
+            return "No datatables found!\n"
+
+        lines = []
+        lines.append("=" * 60)
+        lines.append("DATATABLES")
+        lines.append("=" * 60)
+
+        for dt in datatables:
+            lines.append(f"Name: {dt.name}")
+            lines.append(f"Description: {dt.description}")
+            lines.append("-" * 60)
+
+        return "\n".join(lines) + "\n"
+
 if __name__ == "__main__":
     explain_observation(2531)
+    # Example usage of fetch_all_datatables
+    fetch_all_datatables()
