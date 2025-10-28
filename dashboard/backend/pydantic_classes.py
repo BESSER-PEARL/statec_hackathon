@@ -1,60 +1,84 @@
-from datetime import datetime, date
-from typing import List, Optional, Union, Set
-from enum import Enum
-from pydantic import BaseModel
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict
 
 
-############################################
-# Enumerations are defined here
-############################################
-
-############################################
-# Classes are defined here
-############################################
-class CategoryCreate(BaseModel):
-    id: int
-    name: str
-    data_table_id: int
+class CategoryRead(BaseModel):
     code: str
-    dimension_id: int
-    label: str
-    parent_id: int
-    datatable_1: int  # N:1 Relationship
-    dimension_1: int  # N:1 Relationship
-
-class DataTableCreate(BaseModel):
-    description: str
-    id: int
     name: str
-    created_at: datetime
+    label: Optional[str] = None
+    parent_code: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DimensionSummary(BaseModel):
     code: str
-    provider: str
-    updated_at: datetime
-
-class ObservationDimensionValueCreate(BaseModel):
-    id: int
-    dimension_id: int
-    observation_id: int
-    category_id: int
-    observation_1: int  # N:1 Relationship
-    dimension_2: int  # N:1 Relationship
-    category_2: int  # N:1 Relationship
-
-class DimensionCreate(BaseModel):
-    id: int
-    label: str
     name: str
-    codelist_id: str
+    label: str
     position: int
-    data_table_id: int
+    codelist_id: Optional[str] = None
+    category_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DimensionDetail(DimensionSummary):
+    categories: List[CategoryRead]
+
+
+class DataTableSummary(BaseModel):
     code: str
-    datatable: int  # N:1 Relationship
+    name: str
+    description: Optional[str] = None
+    provider: Optional[str] = None
+    updated_at: Optional[datetime] = None
+    dimension_count: int
+    observation_count: int
 
-class ObservationCreate(BaseModel):
-    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DataTableDetail(DataTableSummary):
+    dimensions: List[DimensionSummary]
+
+
+class ObservationPoint(BaseModel):
+    observation_id: int
     value: float
-    data_table_id: int
-    id: int
-    time_period: str
-    datatable_2: int  # N:1 Relationship
+    time_period: Optional[str] = None
+    dimensions: Dict[str, str]
 
+
+class AggregateItem(BaseModel):
+    category_code: str
+    category_label: str
+    value: float
+    share: Optional[float] = None
+
+
+class AggregateResponse(BaseModel):
+    dataset_code: str
+    dimension_code: str
+    filters: Dict[str, str]
+    results: List[AggregateItem]
+
+
+class AgeingInsights(BaseModel):
+    dataset_code: str
+    time_period: str
+    population_total: float
+    children_population: float
+    working_age_population: float
+    seniors_population: float
+    share_children: float
+    share_seniors: float
+    share_80_plus: float
+    old_age_dependency_ratio: float
+    age_buckets: List[AggregateItem]
+    seniors_by_sex: List[AggregateItem]
+    seniors_by_marital_status: List[AggregateItem]
+    senior_age_codes: List[str]

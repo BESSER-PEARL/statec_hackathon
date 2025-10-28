@@ -1,477 +1,691 @@
-import uvicorn
-import os, json
-from fastapi import Depends, FastAPI, HTTPException
+from __future__ import annotations
+
+import re
+from urllib.parse import unquote
+
+from typing import Dict, List, Optional, Sequence, Tuple
+
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from pydantic_classes import *
-from sql_alchemy import *
+from sqlalchemy import func
+from sqlalchemy.orm import Session, aliased, selectinload
 
-############################################
-#
-#   Initialize the database
-#
-############################################
+try:  # pragma: no cover - allow execution as module or script
+    from .sql_alchemy import (
+        Base,
+        Category,
+        DataTable,
+        Dimension,
+        Observation,
+        ObservationDimensionValue,
+        SessionLocal,
+    )
+    from .pydantic_classes import (
+        AggregateItem,
+        AgeingInsights,
+        AggregateResponse,
+        CategoryRead,
+        DataTableDetail,
+        DataTableSummary,
+        DimensionDetail,
+        DimensionSummary,
+        ObservationPoint,
+    )
+except ImportError:  # pragma: no cover
+    from sql_alchemy import (
+        Base,
+        Category,
+        DataTable,
+        Dimension,
+        Observation,
+        ObservationDimensionValue,
+        SessionLocal,
+    )
+    from pydantic_classes import (
+        AggregateItem,
+        AgeingInsights,
+        AggregateResponse,
+        CategoryRead,
+        DataTableDetail,
+        DataTableSummary,
+        DimensionDetail,
+        DimensionSummary,
+        ObservationPoint,
+    )
 
-def init_db():
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./Class_Diagram.db"
-    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    Base.metadata.create_all(bind=engine)
-    return SessionLocal
 
-app = FastAPI()
+app = FastAPI(title="Statec Census API", version="1.0.0")
 
-# Enable CORS for all origins (for development)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or restrict to ["http://localhost:3000"]
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize database session
-SessionLocal = init_db()
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
+
+def get_db() -> Session:
+    session: Session = SessionLocal()
     try:
-        yield db
+        yield session
     finally:
-        db.close()
-
-############################################
-#
-#   ObservationDimensionValue functions
-#
-############################################
- 
- 
- 
- 
- 
- 
-
-@app.get("/observationdimensionvalue/", response_model=None)
-def get_all_observationdimensionvalue(database: Session = Depends(get_db)) -> list[ObservationDimensionValue]:
-    observationdimensionvalue_list = database.query(ObservationDimensionValue).all()
-    return observationdimensionvalue_list
+        session.close()
 
 
-@app.get("/observationdimensionvalue/{observationdimensionvalue_id}/", response_model=None)
-async def get_observationdimensionvalue(observationdimensionvalue_id: int, database: Session = Depends(get_db)) -> ObservationDimensionValue:
-    db_observationdimensionvalue = database.query(ObservationDimensionValue).filter(ObservationDimensionValue.id == observationdimensionvalue_id).first()
-    if db_observationdimensionvalue is None:
-        raise HTTPException(status_code=404, detail="ObservationDimensionValue not found")
+def _get_datatable_by_code(db: Session, dataset_code: str) -> DataTable:
+    # URL decode the dataset code in case it comes with %40 instead of @
+    dataset_code = unquote(dataset_code)
+    datatable = (
+        db.query(DataTable)
+        .filter(DataTable.code == dataset_code)
+        .one_or_none()
+    )
+    if datatable is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dataset '{dataset_code}' not found.",
+        )
+    return datatable
 
-    response_data = {
-        "observationdimensionvalue": db_observationdimensionvalue,
-}
-    return response_data
+
+def _counts_by_table(
+    db: Session,
+) -> Tuple[Dict[int, int], Dict[int, int]]:
+    dimension_counts: Dict[int, int] = dict(
+        db.query(Dimension.data_table_id, func.count(Dimension.id))
+        .group_by(Dimension.data_table_id)
+        .all()
+    )
+    observation_counts: Dict[int, int] = dict(
+        db.query(Observation.data_table_id, func.count(Observation.id))
+        .group_by(Observation.data_table_id)
+        .all()
+    )
+    return dimension_counts, observation_counts
 
 
+@app.get("/health", tags=["meta"])
+def healthcheck() -> Dict[str, str]:
+    return {"status": "ok"}
 
-@app.post("/observationdimensionvalue/", response_model=None)
-async def create_observationdimensionvalue(observationdimensionvalue_data: ObservationDimensionValueCreate, database: Session = Depends(get_db)) -> ObservationDimensionValue:
 
-    if observationdimensionvalue_data.observation_1 is not None:
-        db_observation_1 = database.query(Observation).filter(Observation.id == observationdimensionvalue_data.observation_1).first()
-        if not db_observation_1:
-            raise HTTPException(status_code=400, detail="Observation not found")
+@app.get("/datasets", response_model=List[DataTableSummary], tags=["datasets"])
+def list_datasets(db: Session = Depends(get_db)) -> List[DataTableSummary]:
+    tables = db.query(DataTable).order_by(DataTable.name).all()
+    dimension_counts, observation_counts = _counts_by_table(db)
+    summaries: List[DataTableSummary] = []
+    for table in tables:
+        summaries.append(
+            DataTableSummary(
+                code=table.code,
+                name=table.name,
+                description=table.description,
+                provider=table.provider,
+                updated_at=table.updated_at,
+                dimension_count=dimension_counts.get(table.id, 0),
+                observation_count=observation_counts.get(table.id, 0),
+            )
+        )
+    return summaries
+
+
+@app.get(
+    "/datasets/{dataset_code}",
+    response_model=DataTableDetail,
+    tags=["datasets"],
+)
+def get_dataset(dataset_code: str, db: Session = Depends(get_db)) -> DataTableDetail:
+    # URL decode the dataset code
+    dataset_code = unquote(dataset_code)
+    datatable = _get_datatable_by_code(db, dataset_code)
+    dimension_counts, observation_counts = _counts_by_table(db)
+
+    # Get ALL dimensions (they're now global, not per-datatable)
+    # But count categories that are actually used in observations for this dataset
+    dimensions = (
+        db.query(Dimension)
+        .order_by(Dimension.position, Dimension.code)
+        .all()
+    )
+
+    # Count categories per dimension
+    category_counts: Dict[int, int] = dict(
+        db.query(Dimension.id, func.count(Category.id.distinct()))
+        .join(Category, Category.dimension_id == Dimension.id)
+        .group_by(Dimension.id)
+        .all()
+    )
+
+    dimension_summaries = [
+        DimensionSummary(
+            code=dimension.code,
+            name=dimension.name,
+            label=dimension.label,
+            position=dimension.position,
+            codelist_id=dimension.codelist_id,
+            category_count=category_counts.get(dimension.id, 0),
+        )
+        for dimension in dimensions
+    ]
+
+    return DataTableDetail(
+        code=datatable.code,
+        name=datatable.name,
+        description=datatable.description,
+        provider=datatable.provider,
+        updated_at=datatable.updated_at,
+        dimension_count=len(dimensions),
+        observation_count=observation_counts.get(datatable.id, 0),
+        dimensions=dimension_summaries,
+    )
+
+
+@app.get(
+    "/datasets/{dataset_code}/dimensions/{dimension_code}",
+    response_model=DimensionDetail,
+    tags=["dimensions"],
+)
+def get_dimension_detail(
+    dataset_code: str,
+    dimension_code: str,
+    db: Session = Depends(get_db),
+) -> DimensionDetail:
+    # URL decode dataset code (not needed for dimension_code as it's simple)
+    dataset_code = unquote(dataset_code)
+    # Dimensions are now global, so just query by code
+    dimension: Optional[Dimension] = (
+        db.query(Dimension)
+        .options(
+            selectinload(Dimension.categories).selectinload(Category.parent)
+        )
+        .filter(Dimension.code == dimension_code)
+        .one_or_none()
+    )
+    if dimension is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dimension '{dimension_code}' not found.",
+        )
+
+    categories = sorted(
+        dimension.categories,
+        key=lambda category: (category.parent_id or 0, category.code),
+    )
+
+    category_payload = [
+        CategoryRead(
+            code=category.code,
+            name=category.name,
+            label=category.label,
+            parent_code=category.parent.code if category.parent else None,
+        )
+        for category in categories
+    ]
+
+    return DimensionDetail(
+        code=dimension.code,
+        name=dimension.name,
+        label=dimension.label,
+        position=dimension.position,
+        codelist_id=dimension.codelist_id,
+        category_count=len(category_payload),
+        categories=category_payload,
+    )
+
+
+@app.get(
+    "/datasets/{dataset_code}/observations",
+    response_model=List[ObservationPoint],
+    tags=["observations"],
+)
+def list_observations(
+    dataset_code: str,
+    limit: int = Query(100, gt=0, le=1000),
+    db: Session = Depends(get_db),
+) -> List[ObservationPoint]:
+    dataset_code = unquote(dataset_code)
+    datatable = _get_datatable_by_code(db, dataset_code)
+    observations = (
+        db.query(Observation)
+        .filter(Observation.data_table_id == datatable.id)
+        .options(
+            selectinload(Observation.dimension_values)
+            .selectinload(ObservationDimensionValue.dimension),
+            selectinload(Observation.dimension_values)
+            .selectinload(ObservationDimensionValue.category),
+        )
+        .order_by(Observation.id)
+        .limit(limit)
+        .all()
+    )
+
+    observation_payload: List[ObservationPoint] = []
+    for observation in observations:
+        dimensions_map: Dict[str, str] = {}
+        for mapping in observation.dimension_values:
+            if mapping.dimension and mapping.category:
+                dimensions_map[mapping.dimension.code] = mapping.category.code
+        observation_payload.append(
+            ObservationPoint(
+                observation_id=observation.id,
+                value=float(observation.value),
+                time_period=observation.time_period,
+                dimensions=dimensions_map,
+            )
+        )
+    return observation_payload
+
+
+TOTAL_CATEGORY_CODES = {"_T", "TOTAL", "TOT"}
+
+
+def _normalise_filter_values(
+    filters: Optional[Dict[str, Sequence[str]]]
+) -> Dict[str, List[str]]:
+    if not filters:
+        return {}
+    normalised: Dict[str, List[str]] = {}
+    for key, value in filters.items():
+        if value is None:
+            continue
+        if isinstance(value, (list, tuple, set)):
+            values = [str(item) for item in value if item is not None]
+        else:
+            values = [str(value)]
+        if values:
+            normalised[key.upper()] = values
+    return normalised
+
+
+def _default_total_filters(datatable: DataTable) -> Dict[str, str]:
+    totals: Dict[str, str] = {}
+    for dimension in datatable.dimensions:
+        candidate = next(
+            (cat.code for cat in dimension.categories if cat.code in TOTAL_CATEGORY_CODES),
+            None,
+        )
+        if candidate is None:
+            candidate = next(
+                (cat.code for cat in dimension.categories if cat.code.startswith("_")),
+                None,
+            )
+        if candidate is None and dimension.categories:
+            candidate = dimension.categories[0].code
+        if candidate is not None:
+            totals[dimension.code] = candidate
+    return totals
+
+
+def _apply_dimension_filter(query, dim_code: str, values: Sequence[str]):
+    dim_alias = aliased(Dimension)
+    cat_alias = aliased(Category)
+    odv_alias = aliased(ObservationDimensionValue)
+    query = query.join(odv_alias, Observation.dimension_values)
+    query = query.join(dim_alias, odv_alias.dimension)
+    query = query.filter(dim_alias.code == dim_code)
+    query = query.join(cat_alias, odv_alias.category)
+    if len(values) == 1:
+        query = query.filter(cat_alias.code == values[0])
     else:
-        raise HTTPException(status_code=400, detail="Observation ID is required")
-    if observationdimensionvalue_data.dimension_2 is not None:
-        db_dimension_2 = database.query(Dimension).filter(Dimension.id == observationdimensionvalue_data.dimension_2).first()
-        if not db_dimension_2:
-            raise HTTPException(status_code=400, detail="Dimension not found")
+        query = query.filter(cat_alias.code.in_(list(values)))
+    return query
+
+
+def _aggregate_dimension(
+    db: Session,
+    datatable: DataTable,
+    dimension_code: str,
+    filters: Optional[Dict[str, Sequence[str]]] = None,
+    order: str = "desc",
+    limit: Optional[int] = None,
+) -> Tuple[List[AggregateItem], float, float]:
+    dimension_code = dimension_code.upper()
+    filt = _normalise_filter_values(filters)
+
+    # Dimensions are now global, query by code only
+    agg_dimension = (
+        db.query(Dimension)
+        .filter(Dimension.code == dimension_code)
+        .one_or_none()
+    )
+    if agg_dimension is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Dimension '{dimension_code}' not available.",
+        )
+
+    agg_odv = aliased(ObservationDimensionValue)
+    agg_cat = aliased(Category)
+    agg_dim = aliased(Dimension)
+    value_expr = func.sum(Observation.value)
+
+    query = (
+        db.query(
+            agg_cat.code.label("category_code"),
+            agg_cat.label.label("category_label"),
+            agg_cat.name.label("category_name"),
+            value_expr.label("value"),
+        )
+        .select_from(Observation)
+        .join(agg_odv, Observation.id == agg_odv.observation_id)
+        .join(agg_dim, agg_odv.dimension_id == agg_dim.id)
+        .join(agg_cat, agg_odv.category_id == agg_cat.id)
+        .filter(Observation.data_table_id == datatable.id)
+        .filter(agg_dim.id == agg_dimension.id)
+    )
+
+    for filter_dim_code, values in filt.items():
+        if filter_dim_code == "TIME_PERIOD":
+            query = query.filter(Observation.time_period.in_(values))
+            continue
+        if filter_dim_code == dimension_code:
+            if len(values) == 1:
+                query = query.filter(agg_cat.code == values[0])
+            else:
+                query = query.filter(agg_cat.code.in_(list(values)))
+            continue
+        # Skip filters with only "_T" value (means "all categories")
+        if len(values) == 1 and values[0] in TOTAL_CATEGORY_CODES:
+            continue
+        query = _apply_dimension_filter(query, filter_dim_code, values)
+
+    query = query.group_by(agg_cat.code, agg_cat.label, agg_cat.name)
+
+    if order.lower() == "asc":
+        query = query.order_by(value_expr.asc())
     else:
-        raise HTTPException(status_code=400, detail="Dimension ID is required")
-    if observationdimensionvalue_data.category_2 is not None:
-        db_category_2 = database.query(Category).filter(Category.id == observationdimensionvalue_data.category_2).first()
-        if not db_category_2:
-            raise HTTPException(status_code=400, detail="Category not found")
-    else:
-        raise HTTPException(status_code=400, detail="Category ID is required")
+        query = query.order_by(value_expr.desc())
+
+    if limit:
+        query = query.limit(limit)
+
+    rows = query.all()
+    if not rows:
+        return [], 0.0, 0.0
+
+    non_total_sum = sum(
+        float(row.value or 0.0)
+        for row in rows
+        if row.category_code not in TOTAL_CATEGORY_CODES
+    )
+    total_row_value = next(
+        (
+            float(row.value or 0.0)
+            for row in rows
+            if row.category_code in TOTAL_CATEGORY_CODES
+        ),
+        0.0,
+    )
+    reference_total = non_total_sum if non_total_sum else total_row_value
+
+    results: List[AggregateItem] = []
+    for row in rows:
+        value = float(row.value or 0.0)
+        if row.category_code in TOTAL_CATEGORY_CODES:
+            share = 100.0 if value else 0.0
+        elif reference_total:
+            share = round((value / reference_total) * 100, 2)
+        else:
+            share = None
+        label = row.category_label or row.category_name or row.category_code
+        results.append(
+            AggregateItem(
+                category_code=row.category_code,
+                category_label=label,
+                value=value,
+                share=share,
+            )
+        )
+
+    return results, reference_total, total_row_value
+
+
+@app.get(
+    "/datasets/{dataset_code}/aggregates",
+    response_model=AggregateResponse,
+    tags=["observations"],
+)
+def aggregate_dataset(
+    dataset_code: str,
+    request: Request,
+    dimension: str = Query(..., min_length=1),
+    limit: Optional[int] = Query(None, gt=0, le=500),
+    order: str = Query("desc", pattern="^(?i)(asc|desc)$"),
+    db: Session = Depends(get_db),
+) -> AggregateResponse:
+    dataset_code = unquote(dataset_code)
+    datatable = _get_datatable_by_code(db, dataset_code)
+    dimension_code = dimension.upper()
+
+    raw_filters: Dict[str, List[str]] = {}
+    for key, value in request.query_params.multi_items():
+        key_upper = key.upper()
+        if key_upper in {"DIMENSION", "LIMIT", "ORDER"}:
+            continue
+        raw_filters.setdefault(key_upper, []).append(value)
+
+    results, _, _ = _aggregate_dimension(
+        db,
+        datatable,
+        dimension_code,
+        filters=raw_filters,
+        order=order,
+        limit=limit,
+    )
+
+    return AggregateResponse(
+        dataset_code=datatable.code,
+        dimension_code=dimension_code,
+        filters={key: values[-1] for key, values in raw_filters.items()},
+        results=results,
+    )
+
+
+@app.get(
+    "/datasets/{dataset_code}/insights/ageing",
+    response_model=AgeingInsights,
+    tags=["insights"],
+)
+def ageing_insights(
+    dataset_code: str,
+    db: Session = Depends(get_db),
+) -> AgeingInsights:
+    dataset_code = unquote(dataset_code)
+    datatable = _get_datatable_by_code(db, dataset_code)
+
+    latest_period = (
+        db.query(Observation.time_period)
+        .filter(Observation.data_table_id == datatable.id)
+        .filter(Observation.time_period.isnot(None))
+        .order_by(Observation.time_period.desc())
+        .limit(1)
+        .scalar()
+    )
+    if latest_period is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No observations available for dataset '{dataset_code}'.",
+        )
+
+    base_filters: Dict[str, Sequence[str]] = {
+        "TIME_PERIOD": [latest_period],
+        "MEASURE": ["POP"],
+        "UNIT_MEASURE": ["PERS"],
+        "FREQ": ["A10"],
+    }
+
+    age_filters = {**base_filters, "SEX": ["_T"], "LMS": ["_T"]}
+
+    age_results, _, total_value = _aggregate_dimension(
+        db,
+        datatable,
+        "AGE",
+        filters=age_filters,
+        order="desc",
+    )
+
+    population_total = total_value or sum(item.value for item in age_results)
+
+    age_lookup = {item.category_code: item for item in age_results}
+
+    bucket_order = ["Y_LT15", "Y15T29", "Y30T49", "Y50T64", "Y65T84", "Y_GE85"]
+    age_buckets: List[AggregateItem] = []
+    for code in bucket_order:
+        item = age_lookup.get(code)
+        if not item:
+            continue
+        share = (
+            round((item.value / population_total) * 100, 2)
+            if population_total
+            else None
+        )
+        age_buckets.append(
+            AggregateItem(
+                category_code=code,
+                category_label=item.category_label,
+                value=item.value,
+                share=share,
+            )
+        )
+
+    def parse_age_bounds(code: str) -> Tuple[Optional[int], Optional[int]]:
+        if not code or not code.startswith("Y"):
+            return None, None
+        body = code[1:]
+        if body.startswith("LT"):
+            match = re.search(r"\d+", body)
+            return None, int(match.group()) if match else None
+        if body.startswith("GE"):
+            match = re.search(r"\d+", body)
+            return int(match.group()) if match else None, None
+        if "T" in body:
+            low, high = body.split("T", 1)
+            if low.isdigit() and high.isdigit():
+                return int(low), int(high)
+        if body.isdigit():
+            age = int(body)
+            return age, age
+        return None, None
+
+    seniors_codes: List[str] = []
+    for code, item in age_lookup.items():
+        lower, upper = parse_age_bounds(code)
+        if lower is None and upper is None:
+            continue
+        if lower is not None and lower >= 65:
+            if upper is None or upper - lower <= 5:
+                seniors_codes.append(code)
+        elif upper is not None and upper >= 65 and lower is None:
+            seniors_codes.append(code)
+
+    if not seniors_codes and "Y65T84" in age_lookup:
+        seniors_codes.append("Y65T84")
+    if not seniors_codes and "_T" in age_lookup:
+        seniors_codes.append("_T")
+
+    seniors_population = sum(
+        age_lookup[code].value for code in seniors_codes if code in age_lookup
+    )
+
+    children_population = (
+        age_lookup.get("Y_LT15").value if "Y_LT15" in age_lookup else 0.0
+    )
+    working_age_population = max(
+        population_total - children_population - seniors_population,
+        0.0,
+    )
+
+    share_children = (
+        round((children_population / population_total) * 100, 2)
+        if population_total
+        else 0.0
+    )
+    share_seniors = (
+        round((seniors_population / population_total) * 100, 2)
+        if population_total
+        else 0.0
+    )
+
+    eighty_plus_codes: List[str] = []
+    for code in seniors_codes:
+        lower, upper = parse_age_bounds(code)
+        bound = lower if lower is not None else upper
+        if bound is not None and bound >= 80:
+            eighty_plus_codes.append(code)
+
+    share_80_plus = 0.0
+    if population_total and eighty_plus_codes:
+        eighty_plus_value = sum(
+            age_lookup[code].value for code in eighty_plus_codes if code in age_lookup
+        )
+        share_80_plus = round((eighty_plus_value / population_total) * 100, 2)
+
+    old_age_dependency_ratio = 0.0
+    if working_age_population:
+        old_age_dependency_ratio = round(
+            (seniors_population / working_age_population) * 100,
+            2,
+        )
+
+    senior_filters_for_sex: Dict[str, Sequence[str]] = {
+        **base_filters,
+        "AGE": seniors_codes,
+    }
+    senior_filters_for_sex.setdefault("LMS", ["_T"])
+
+    seniors_by_sex, _, _ = _aggregate_dimension(
+        db,
+        datatable,
+        "SEX",
+        filters=senior_filters_for_sex,
+        order="desc",
+    )
+
+    senior_filters_for_marital: Dict[str, Sequence[str]] = {
+        **base_filters,
+        "AGE": seniors_codes,
+        "SEX": ["_T"],
+    }
+
+    seniors_by_marital, _, _ = _aggregate_dimension(
+        db,
+        datatable,
+        "LMS",
+        filters=senior_filters_for_marital,
+        order="desc",
+    )
+
+    return AgeingInsights(
+        dataset_code=datatable.code,
+        time_period=latest_period,
+        population_total=population_total,
+        children_population=children_population,
+        working_age_population=working_age_population,
+        seniors_population=seniors_population,
+        share_children=share_children,
+        share_seniors=share_seniors,
+        share_80_plus=share_80_plus,
+        old_age_dependency_ratio=old_age_dependency_ratio,
+        age_buckets=age_buckets,
+        seniors_by_sex=seniors_by_sex,
+        seniors_by_marital_status=seniors_by_marital,
+        senior_age_codes=seniors_codes,
+    )
+
+__all__ = ["app"]
 
-    db_observationdimensionvalue = ObservationDimensionValue(
-        id=observationdimensionvalue_data.id,         dimension_id=observationdimensionvalue_data.dimension_id,         observation_id=observationdimensionvalue_data.observation_id,         category_id=observationdimensionvalue_data.category_id, observation_1=db_observation_1, dimension_2=db_dimension_2, category_2=db_category_2        )
-
-    database.add(db_observationdimensionvalue)
-    database.commit()
-    database.refresh(db_observationdimensionvalue)
-
-
-    
-    return db_observationdimensionvalue
-
-
-@app.put("/observationdimensionvalue/{observationdimensionvalue_id}/", response_model=None)
-async def update_observationdimensionvalue(observationdimensionvalue_id: int, observationdimensionvalue_data: ObservationDimensionValueCreate, database: Session = Depends(get_db)) -> ObservationDimensionValue:
-    db_observationdimensionvalue = database.query(ObservationDimensionValue).filter(ObservationDimensionValue.id == observationdimensionvalue_id).first()
-    if db_observationdimensionvalue is None:
-        raise HTTPException(status_code=404, detail="ObservationDimensionValue not found")
-
-    setattr(db_observationdimensionvalue, 'id', observationdimensionvalue_data.id)
-    setattr(db_observationdimensionvalue, 'dimension_id', observationdimensionvalue_data.dimension_id)
-    setattr(db_observationdimensionvalue, 'observation_id', observationdimensionvalue_data.observation_id)
-    setattr(db_observationdimensionvalue, 'category_id', observationdimensionvalue_data.category_id)
-    database.commit()
-    database.refresh(db_observationdimensionvalue)
-    return db_observationdimensionvalue
-
-
-@app.delete("/observationdimensionvalue/{observationdimensionvalue_id}/", response_model=None)
-async def delete_observationdimensionvalue(observationdimensionvalue_id: int, database: Session = Depends(get_db)):
-    db_observationdimensionvalue = database.query(ObservationDimensionValue).filter(ObservationDimensionValue.id == observationdimensionvalue_id).first()
-    if db_observationdimensionvalue is None:
-        raise HTTPException(status_code=404, detail="ObservationDimensionValue not found")
-    database.delete(db_observationdimensionvalue)
-    database.commit()
-    return db_observationdimensionvalue
-
-
-
-############################################
-#
-#   Observation functions
-#
-############################################
- 
- 
- 
- 
-
-@app.get("/observation/", response_model=None)
-def get_all_observation(database: Session = Depends(get_db)) -> list[Observation]:
-    observation_list = database.query(Observation).all()
-    return observation_list
-
-
-@app.get("/observation/{observation_id}/", response_model=None)
-async def get_observation(observation_id: int, database: Session = Depends(get_db)) -> Observation:
-    db_observation = database.query(Observation).filter(Observation.id == observation_id).first()
-    if db_observation is None:
-        raise HTTPException(status_code=404, detail="Observation not found")
-
-    response_data = {
-        "observation": db_observation,
-}
-    return response_data
-
-
-
-@app.post("/observation/", response_model=None)
-async def create_observation(observation_data: ObservationCreate, database: Session = Depends(get_db)) -> Observation:
-
-    if observation_data.datatable_2 is not None:
-        db_datatable_2 = database.query(DataTable).filter(DataTable.id == observation_data.datatable_2).first()
-        if not db_datatable_2:
-            raise HTTPException(status_code=400, detail="DataTable not found")
-    else:
-        raise HTTPException(status_code=400, detail="DataTable ID is required")
-
-    db_observation = Observation(
-        updated_at=observation_data.updated_at,         value=observation_data.value,         data_table_id=observation_data.data_table_id,         id=observation_data.id,         time_period=observation_data.time_period, datatable_2=db_datatable_2        )
-
-    database.add(db_observation)
-    database.commit()
-    database.refresh(db_observation)
-
-
-    
-    return db_observation
-
-
-@app.put("/observation/{observation_id}/", response_model=None)
-async def update_observation(observation_id: int, observation_data: ObservationCreate, database: Session = Depends(get_db)) -> Observation:
-    db_observation = database.query(Observation).filter(Observation.id == observation_id).first()
-    if db_observation is None:
-        raise HTTPException(status_code=404, detail="Observation not found")
-
-    setattr(db_observation, 'updated_at', observation_data.updated_at)
-    setattr(db_observation, 'value', observation_data.value)
-    setattr(db_observation, 'data_table_id', observation_data.data_table_id)
-    setattr(db_observation, 'id', observation_data.id)
-    setattr(db_observation, 'time_period', observation_data.time_period)
-    database.commit()
-    database.refresh(db_observation)
-    return db_observation
-
-
-@app.delete("/observation/{observation_id}/", response_model=None)
-async def delete_observation(observation_id: int, database: Session = Depends(get_db)):
-    db_observation = database.query(Observation).filter(Observation.id == observation_id).first()
-    if db_observation is None:
-        raise HTTPException(status_code=404, detail="Observation not found")
-    database.delete(db_observation)
-    database.commit()
-    return db_observation
-
-
-
-############################################
-#
-#   Category functions
-#
-############################################
- 
- 
- 
- 
- 
- 
-
-@app.get("/category/", response_model=None)
-def get_all_category(database: Session = Depends(get_db)) -> list[Category]:
-    category_list = database.query(Category).all()
-    return category_list
-
-
-@app.get("/category/{category_id}/", response_model=None)
-async def get_category(category_id: int, database: Session = Depends(get_db)) -> Category:
-    db_category = database.query(Category).filter(Category.id == category_id).first()
-    if db_category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    response_data = {
-        "category": db_category,
-}
-    return response_data
-
-
-
-@app.post("/category/", response_model=None)
-async def create_category(category_data: CategoryCreate, database: Session = Depends(get_db)) -> Category:
-
-    if category_data.datatable_1 is not None:
-        db_datatable_1 = database.query(DataTable).filter(DataTable.id == category_data.datatable_1).first()
-        if not db_datatable_1:
-            raise HTTPException(status_code=400, detail="DataTable not found")
-    else:
-        raise HTTPException(status_code=400, detail="DataTable ID is required")
-    if category_data.dimension_1 is not None:
-        db_dimension_1 = database.query(Dimension).filter(Dimension.id == category_data.dimension_1).first()
-        if not db_dimension_1:
-            raise HTTPException(status_code=400, detail="Dimension not found")
-    else:
-        raise HTTPException(status_code=400, detail="Dimension ID is required")
-
-    db_category = Category(
-        id=category_data.id,         name=category_data.name,         data_table_id=category_data.data_table_id,         code=category_data.code,         dimension_id=category_data.dimension_id,         label=category_data.label,         parent_id=category_data.parent_id, datatable_1=db_datatable_1, dimension_1=db_dimension_1        )
-
-    database.add(db_category)
-    database.commit()
-    database.refresh(db_category)
-
-
-    
-    return db_category
-
-
-@app.put("/category/{category_id}/", response_model=None)
-async def update_category(category_id: int, category_data: CategoryCreate, database: Session = Depends(get_db)) -> Category:
-    db_category = database.query(Category).filter(Category.id == category_id).first()
-    if db_category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    setattr(db_category, 'id', category_data.id)
-    setattr(db_category, 'name', category_data.name)
-    setattr(db_category, 'data_table_id', category_data.data_table_id)
-    setattr(db_category, 'code', category_data.code)
-    setattr(db_category, 'dimension_id', category_data.dimension_id)
-    setattr(db_category, 'label', category_data.label)
-    setattr(db_category, 'parent_id', category_data.parent_id)
-    database.commit()
-    database.refresh(db_category)
-    return db_category
-
-
-@app.delete("/category/{category_id}/", response_model=None)
-async def delete_category(category_id: int, database: Session = Depends(get_db)):
-    db_category = database.query(Category).filter(Category.id == category_id).first()
-    if db_category is None:
-        raise HTTPException(status_code=404, detail="Category not found")
-    database.delete(db_category)
-    database.commit()
-    return db_category
-
-
-
-############################################
-#
-#   Dimension functions
-#
-############################################
- 
- 
- 
- 
- 
- 
-
-@app.get("/dimension/", response_model=None)
-def get_all_dimension(database: Session = Depends(get_db)) -> list[Dimension]:
-    dimension_list = database.query(Dimension).all()
-    return dimension_list
-
-
-@app.get("/dimension/{dimension_id}/", response_model=None)
-async def get_dimension(dimension_id: int, database: Session = Depends(get_db)) -> Dimension:
-    db_dimension = database.query(Dimension).filter(Dimension.id == dimension_id).first()
-    if db_dimension is None:
-        raise HTTPException(status_code=404, detail="Dimension not found")
-
-    response_data = {
-        "dimension": db_dimension,
-}
-    return response_data
-
-
-
-@app.post("/dimension/", response_model=None)
-async def create_dimension(dimension_data: DimensionCreate, database: Session = Depends(get_db)) -> Dimension:
-
-    if dimension_data.datatable is not None:
-        db_datatable = database.query(DataTable).filter(DataTable.id == dimension_data.datatable).first()
-        if not db_datatable:
-            raise HTTPException(status_code=400, detail="DataTable not found")
-    else:
-        raise HTTPException(status_code=400, detail="DataTable ID is required")
-
-    db_dimension = Dimension(
-        id=dimension_data.id,         label=dimension_data.label,         name=dimension_data.name,         codelist_id=dimension_data.codelist_id,         position=dimension_data.position,         data_table_id=dimension_data.data_table_id,         code=dimension_data.code, datatable=db_datatable        )
-
-    database.add(db_dimension)
-    database.commit()
-    database.refresh(db_dimension)
-
-
-    
-    return db_dimension
-
-
-@app.put("/dimension/{dimension_id}/", response_model=None)
-async def update_dimension(dimension_id: int, dimension_data: DimensionCreate, database: Session = Depends(get_db)) -> Dimension:
-    db_dimension = database.query(Dimension).filter(Dimension.id == dimension_id).first()
-    if db_dimension is None:
-        raise HTTPException(status_code=404, detail="Dimension not found")
-
-    setattr(db_dimension, 'id', dimension_data.id)
-    setattr(db_dimension, 'label', dimension_data.label)
-    setattr(db_dimension, 'name', dimension_data.name)
-    setattr(db_dimension, 'codelist_id', dimension_data.codelist_id)
-    setattr(db_dimension, 'position', dimension_data.position)
-    setattr(db_dimension, 'data_table_id', dimension_data.data_table_id)
-    setattr(db_dimension, 'code', dimension_data.code)
-    database.commit()
-    database.refresh(db_dimension)
-    return db_dimension
-
-
-@app.delete("/dimension/{dimension_id}/", response_model=None)
-async def delete_dimension(dimension_id: int, database: Session = Depends(get_db)):
-    db_dimension = database.query(Dimension).filter(Dimension.id == dimension_id).first()
-    if db_dimension is None:
-        raise HTTPException(status_code=404, detail="Dimension not found")
-    database.delete(db_dimension)
-    database.commit()
-    return db_dimension
-
-
-
-############################################
-#
-#   DataTable functions
-#
-############################################
- 
- 
- 
- 
- 
- 
-
-@app.get("/datatable/", response_model=None)
-def get_all_datatable(database: Session = Depends(get_db)) -> list[DataTable]:
-    datatable_list = database.query(DataTable).all()
-    return datatable_list
-
-
-@app.get("/datatable/{datatable_id}/", response_model=None)
-async def get_datatable(datatable_id: int, database: Session = Depends(get_db)) -> DataTable:
-    db_datatable = database.query(DataTable).filter(DataTable.id == datatable_id).first()
-    if db_datatable is None:
-        raise HTTPException(status_code=404, detail="DataTable not found")
-
-    response_data = {
-        "datatable": db_datatable,
-}
-    return response_data
-
-
-
-@app.post("/datatable/", response_model=None)
-async def create_datatable(datatable_data: DataTableCreate, database: Session = Depends(get_db)) -> DataTable:
-
-
-    db_datatable = DataTable(
-        description=datatable_data.description,         id=datatable_data.id,         name=datatable_data.name,         created_at=datatable_data.created_at,         code=datatable_data.code,         provider=datatable_data.provider,         updated_at=datatable_data.updated_at        )
-
-    database.add(db_datatable)
-    database.commit()
-    database.refresh(db_datatable)
-
-
-    
-    return db_datatable
-
-
-@app.put("/datatable/{datatable_id}/", response_model=None)
-async def update_datatable(datatable_id: int, datatable_data: DataTableCreate, database: Session = Depends(get_db)) -> DataTable:
-    db_datatable = database.query(DataTable).filter(DataTable.id == datatable_id).first()
-    if db_datatable is None:
-        raise HTTPException(status_code=404, detail="DataTable not found")
-
-    setattr(db_datatable, 'description', datatable_data.description)
-    setattr(db_datatable, 'id', datatable_data.id)
-    setattr(db_datatable, 'name', datatable_data.name)
-    setattr(db_datatable, 'created_at', datatable_data.created_at)
-    setattr(db_datatable, 'code', datatable_data.code)
-    setattr(db_datatable, 'provider', datatable_data.provider)
-    setattr(db_datatable, 'updated_at', datatable_data.updated_at)
-    database.commit()
-    database.refresh(db_datatable)
-    return db_datatable
-
-
-@app.delete("/datatable/{datatable_id}/", response_model=None)
-async def delete_datatable(datatable_id: int, database: Session = Depends(get_db)):
-    db_datatable = database.query(DataTable).filter(DataTable.id == datatable_id).first()
-    if db_datatable is None:
-        raise HTTPException(status_code=404, detail="DataTable not found")
-    database.delete(db_datatable)
-    database.commit()
-    return db_datatable
-
-
-
-
-
-############################################
-# Maintaining the server
-############################################
 if __name__ == "__main__":
+    import json
+    import os
     import uvicorn
+
     openapi_schema = app.openapi()
-    output_dir = os.path.join(os.getcwd(), 'output_backend')
+    output_dir = os.path.join(os.getcwd(), "output_backend")
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, 'openapi_specs.json')
+    output_file = os.path.join(output_dir, "openapi_specs.json")
     print(f"Writing OpenAPI schema to {output_file}")
-    print("Swagger UI available at 0.0.0.0:8000/docs")
-    with open(output_file, 'w') as file:
-        json.dump(openapi_schema, file)
-    uvicorn.run(app, host="0.0.0.0", port= 8000)
-
-
-
+    print("Swagger UI available at http://0.0.0.0:8000/docs")
+    with open(output_file, "w", encoding="utf-8") as file:
+        json.dump(openapi_schema, file, indent=2)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

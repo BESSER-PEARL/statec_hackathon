@@ -2,147 +2,87 @@
   "styles": [
     {
       "selectors": [
-        "#icnh"
+        "#ageing-dashboard"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#000000",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "auto",
-        "margin": "0",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "auto",
-        "zIndex": 0
+        "backgroundColor": "#f6f7fb",
+        "color": "#0f172a",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "2rem",
+        "padding": "2.5rem clamp(1.5rem, 2.6vw + 1rem, 4rem)",
+        "fontFamily": "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
       }
     },
     {
       "selectors": [
-        "#ie5m"
+        "#hero-section"
       ],
       "style": {
-        "--chart-bar-color": "#3498db",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#000000",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "400px",
-        "margin": "0",
-        "minHeight": "400px",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "100%",
-        "zIndex": 0
+        "backgroundColor": "#ffffff",
+        "borderRadius": "24px",
+        "padding": "2rem",
+        "boxShadow": "0 18px 32px rgba(15, 23, 42, 0.12)",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "0.75rem"
       }
     },
     {
       "selectors": [
-        "#ijor"
+        "#hero-flag"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#4CAF50",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "400px",
-        "margin": "0",
-        "minHeight": "400px",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "100%",
-        "zIndex": 0
+        "textTransform": "uppercase",
+        "letterSpacing": "0.2em",
+        "fontWeight": 600,
+        "color": "#6366f1",
+        "margin": "0"
       }
     },
     {
       "selectors": [
-        "#ijql"
+        "#hero-title"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#000000",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "auto",
         "margin": "0",
-        "padding": "10px",
-        "position": "static",
-        "textAlign": "left",
-        "width": "auto",
-        "zIndex": 0
+        "fontSize": "2.4rem",
+        "lineHeight": "1.2"
       }
     },
     {
       "selectors": [
-        "#ik7mh"
+        "#hero-lead"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#000000",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "400px",
         "margin": "0",
-        "minHeight": "400px",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "100%",
-        "zIndex": 0
+        "color": "#475569",
+        "fontSize": "1.05rem",
+        "lineHeight": "1.6"
       }
     },
     {
       "selectors": [
-        "#ikva"
+        "#generated-charts"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#000000",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "400px",
-        "margin": "0",
-        "minHeight": "400px",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "100%",
-        "zIndex": 0
+        "display": "grid",
+        "gridTemplateColumns": "repeat(auto-fit, minmax(320px, 1fr))",
+        "gap": "2rem",
+        "alignItems": "stretch"
       }
     },
     {
       "selectors": [
-        "#isvaj"
+        "#age-buckets-chart",
+        "#senior-gender-pie"
       ],
       "style": {
-        "--chart-bar-color": "#CCCCCC",
-        "--chart-color-palette": "default",
-        "--chart-line-color": "#8884d8",
-        "backgroundColor": "#FFFFFF",
-        "borderColor": "#CCCCCC",
-        "color": "#000000",
-        "height": "400px",
-        "margin": "0",
-        "minHeight": "400px",
-        "padding": "0",
-        "position": "static",
-        "textAlign": "left",
-        "width": "100%",
-        "zIndex": 0
+        "backgroundColor": "#ffffff",
+        "borderRadius": "20px",
+        "padding": "1.5rem",
+        "boxShadow": "0 18px 32px rgba(15, 23, 42, 0.08)",
+        "minHeight": "360px"
       }
     }
   ]

@@ -1,99 +1,152 @@
-import enum
+from __future__ import annotations
+
+from datetime import datetime
 from typing import List, Optional
+
 from sqlalchemy import (
-    create_engine, Column, ForeignKey, Table, Text, Boolean, String, Date, 
-    Time, DateTime, Float, Integer, Enum
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    create_engine,
+    func,
 )
-from sqlalchemy.orm import (
-    column_property, DeclarativeBase, Mapped, mapped_column, relationship
-)
-from datetime import datetime, time, date
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
+
 
 class Base(DeclarativeBase):
-    pass
+    """Base declarative class shared by all ORM models."""
 
-
-
-# Tables definition for many-to-many relationships
-
-# Tables definition
-class ObservationDimensionValue(Base):
-    __tablename__ = "observationdimensionvalue"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    observation_id: Mapped[int] = mapped_column(Integer)
-    dimension_id: Mapped[int] = mapped_column(Integer)
-    category_id: Mapped[int] = mapped_column(Integer)
-
-class Observation(Base):
-    __tablename__ = "observation"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    value: Mapped[float] = mapped_column(Float)
-    time_period: Mapped[str] = mapped_column(String(100))
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
-    data_table_id: Mapped[int] = mapped_column(Integer)
-
-class Category(Base):
-    __tablename__ = "category"
-    dimension_id: Mapped[int] = mapped_column(Integer)
-    parent_id: Mapped[int] = mapped_column(Integer)
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    code: Mapped[str] = mapped_column(String(100))
-    name: Mapped[str] = mapped_column(String(100))
-    label: Mapped[str] = mapped_column(String(100))
-    data_table_id: Mapped[int] = mapped_column(Integer)
-
-class Dimension(Base):
-    __tablename__ = "dimension"
-    name: Mapped[str] = mapped_column(String(100))
-    label: Mapped[str] = mapped_column(String(100))
-    position: Mapped[int] = mapped_column(Integer)
-    codelist_id: Mapped[str] = mapped_column(String(100))
-    data_table_id: Mapped[int] = mapped_column(Integer)
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    code: Mapped[str] = mapped_column(String(100))
 
 class DataTable(Base):
     __tablename__ = "datatable"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(120), unique=True)
+    name: Mapped[str] = mapped_column(String(150))
+    description: Mapped[Optional[str]] = mapped_column(String(512))
+    provider: Mapped[Optional[str]] = mapped_column(String(150))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    dimensions: Mapped[List["Dimension"]] = relationship(
+        back_populates="data_table", cascade="all, delete-orphan"
+    )
+    categories: Mapped[List["Category"]] = relationship(
+        back_populates="data_table", cascade="all, delete-orphan"
+    )
+    observations: Mapped[List["Observation"]] = relationship(
+        back_populates="data_table", cascade="all, delete-orphan"
+    )
+
+
+class Dimension(Base):
+    __tablename__ = "dimension"
+    __table_args__ = (
+        UniqueConstraint("data_table_id", "code", name="uq_dimension_datatable_code"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
     code: Mapped[str] = mapped_column(String(100))
-    name: Mapped[str] = mapped_column(String(100))
-    description: Mapped[str] = mapped_column(String(100))
-    provider: Mapped[str] = mapped_column(String(100))
-    created_at: Mapped[datetime] = mapped_column(DateTime)
-    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    name: Mapped[str] = mapped_column(String(200))
+    label: Mapped[str] = mapped_column(String(200))
+    position: Mapped[int] = mapped_column(Integer)
+    codelist_id: Mapped[Optional[str]] = mapped_column(String(150))
+    data_table_id: Mapped[int] = mapped_column(ForeignKey("datatable.id"), nullable=False)
 
-#--- Foreign keys and relationships of the observationdimensionvalue table
-ObservationDimensionValue.category_2_id: Mapped["Category"] = mapped_column(ForeignKey("category.id"), nullable=False)
-ObservationDimensionValue.category_2: Mapped["Category"] = relationship("Category", back_populates="observationdimensionvalue_1")
-ObservationDimensionValue.dimension_2_id: Mapped["Dimension"] = mapped_column(ForeignKey("dimension.id"), nullable=False)
-ObservationDimensionValue.dimension_2: Mapped["Dimension"] = relationship("Dimension", back_populates="observationdimensionvalue")
-ObservationDimensionValue.observation_1_id: Mapped["Observation"] = mapped_column(ForeignKey("observation.id"), nullable=False)
-ObservationDimensionValue.observation_1: Mapped["Observation"] = relationship("Observation", back_populates="observationdimensionvalue_2")
-#--- Foreign keys and relationships of the observation table
-Observation.datatable_2_id: Mapped["DataTable"] = mapped_column(ForeignKey("datatable.id"), nullable=False)
-Observation.datatable_2: Mapped["DataTable"] = relationship("DataTable", back_populates="observation")
-Observation.observationdimensionvalue_2: Mapped[List["ObservationDimensionValue"]] = relationship("ObservationDimensionValue", back_populates="observation_1")
-#--- Foreign keys and relationships of the category table
-Category.datatable_1_id: Mapped["DataTable"] = mapped_column(ForeignKey("datatable.id"), nullable=False)
-Category.datatable_1: Mapped["DataTable"] = relationship("DataTable", back_populates="category")
-Category.dimension_1_id: Mapped["Dimension"] = mapped_column(ForeignKey("dimension.id"), nullable=False)
-Category.dimension_1: Mapped["Dimension"] = relationship("Dimension", back_populates="category_1")
-Category.observationdimensionvalue_1: Mapped[List["ObservationDimensionValue"]] = relationship("ObservationDimensionValue", back_populates="category_2")
-#--- Foreign keys and relationships of the dimension table
-Dimension.datatable_id: Mapped["DataTable"] = mapped_column(ForeignKey("datatable.id"), nullable=False)
-Dimension.datatable: Mapped["DataTable"] = relationship("DataTable", back_populates="dimension")
-Dimension.observationdimensionvalue: Mapped[List["ObservationDimensionValue"]] = relationship("ObservationDimensionValue", back_populates="dimension_2")
-Dimension.category_1: Mapped[List["Category"]] = relationship("Category", back_populates="dimension_1")
-#--- Foreign keys and relationships of the datatable table
-DataTable.observation: Mapped[List["Observation"]] = relationship("Observation", back_populates="datatable_2")
-DataTable.category: Mapped[List["Category"]] = relationship("Category", back_populates="datatable_1")
-DataTable.dimension: Mapped[List["Dimension"]] = relationship("Dimension", back_populates="datatable")
+    data_table: Mapped["DataTable"] = relationship(back_populates="dimensions")
+    categories: Mapped[List["Category"]] = relationship(
+        back_populates="dimension", cascade="all, delete-orphan"
+    )
+    observation_values: Mapped[List["ObservationDimensionValue"]] = relationship(
+        back_populates="dimension", cascade="all, delete-orphan"
+    )
 
-# Database connection
 
-DATABASE_URL = "sqlite:///Class_Diagram.db"  # SQLite connection
+class Category(Base):
+    __tablename__ = "category"
+    __table_args__ = (
+        UniqueConstraint("dimension_id", "code", name="uq_category_dimension_code"),
+    )
 
-engine = create_engine(DATABASE_URL, echo=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(200))
+    label: Mapped[Optional[str]] = mapped_column(String(512))
+    data_table_id: Mapped[int] = mapped_column(ForeignKey("datatable.id"), nullable=False)
+    dimension_id: Mapped[int] = mapped_column(ForeignKey("dimension.id"), nullable=False)
+    parent_id: Mapped[Optional[int]] = mapped_column(ForeignKey("category.id"))
 
-# Create tables in the database
-Base.metadata.create_all(engine, checkfirst=True)
+    data_table: Mapped["DataTable"] = relationship(back_populates="categories")
+    dimension: Mapped["Dimension"] = relationship(back_populates="categories")
+    parent: Mapped[Optional["Category"]] = relationship(
+        back_populates="children",
+        remote_side=[id],
+    )
+    children: Mapped[List["Category"]] = relationship(
+        back_populates="parent",
+        cascade="all, delete-orphan",
+    )
+    observation_values: Mapped[List["ObservationDimensionValue"]] = relationship(
+        back_populates="category", cascade="all, delete-orphan"
+    )
+
+
+class Observation(Base):
+    __tablename__ = "observation"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    value: Mapped[float] = mapped_column(Float, nullable=False)
+    time_period: Mapped[Optional[str]] = mapped_column(String(32))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+    data_table_id: Mapped[int] = mapped_column(ForeignKey("datatable.id"), nullable=False)
+
+    data_table: Mapped["DataTable"] = relationship(back_populates="observations")
+    dimension_values: Mapped[List["ObservationDimensionValue"]] = relationship(
+        back_populates="observation", cascade="all, delete-orphan"
+    )
+
+
+class ObservationDimensionValue(Base):
+    __tablename__ = "observation_dimension_value"
+    __table_args__ = (
+        UniqueConstraint("observation_id", "dimension_id", name="uq_obs_dim"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    observation_id: Mapped[int] = mapped_column(
+        ForeignKey("observation.id", ondelete="CASCADE"), nullable=False
+    )
+    dimension_id: Mapped[int] = mapped_column(ForeignKey("dimension.id"), nullable=False)
+    category_id: Mapped[int] = mapped_column(ForeignKey("category.id"), nullable=False)
+
+    observation: Mapped["Observation"] = relationship(back_populates="dimension_values")
+    dimension: Mapped["Dimension"] = relationship(back_populates="observation_values")
+    category: Mapped["Category"] = relationship(back_populates="observation_values")
+
+
+DATABASE_URL = "sqlite:///Class_Diagram.db"
+engine = create_engine(DATABASE_URL, echo=False, future=True)
+SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def init_db() -> None:
+    """Ensure all tables exist."""
+    Base.metadata.create_all(engine, checkfirst=True)
+
+
+init_db()

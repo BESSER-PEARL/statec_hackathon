@@ -8,6 +8,7 @@ import { BarChartComponent } from "./charts/BarChartComponent";
 import { PieChartComponent } from "./charts/PieChartComponent";
 import { RadarChartComponent } from "./charts/RadarChartComponent";
 import { RadialBarChartComponent } from "./charts/RadialBarChartComponent";
+import { StatCardComponent } from "./StatCardComponent";
 
 import { applyStyle, StyleData } from "../utils/applyStyle";
 
@@ -16,6 +17,9 @@ export interface DataBindingConfig {
   entity?: string;
   label_field?: string;
   data_field?: string;
+  code_field?: string;
+  omit_codes?: string[];
+  top_n?: number;
 }
 
 export interface RendererProps {
@@ -69,6 +73,61 @@ const extractDataRows = (payload: any, entity?: string): any[] => {
   return [];
 };
 
+const getNestedValue = (source: any, path?: string): any => {
+  if (!source || !path) {
+    return undefined;
+  }
+  return path.split(".").reduce((acc: any, key: string) => {
+    if (acc === null || acc === undefined) {
+      return undefined;
+    }
+    return acc[key];
+  }, source);
+};
+
+const applyBindingTransforms = (
+  rows: any[],
+  binding?: DataBindingConfig
+): any[] => {
+  if (!binding) {
+    return rows;
+  }
+
+  let result = Array.isArray(rows) ? [...rows] : [];
+
+  if (binding.code_field && binding.omit_codes?.length) {
+    const omitSet = new Set(binding.omit_codes);
+    result = result.filter(
+      (row) => !omitSet.has(getNestedValue(row, binding.code_field))
+    );
+  }
+
+  if (binding.top_n && Number.isFinite(binding.top_n)) {
+    result = result.slice(0, binding.top_n);
+  }
+
+  return result;
+};
+
+const formatNumericValue = (
+  value: number,
+  format: string | undefined,
+  decimals?: number
+): string => {
+  const formatter = Intl.NumberFormat("en-GB", {
+    maximumFractionDigits: decimals ?? (format === "decimal" ? 1 : 0),
+    minimumFractionDigits:
+      format === "decimal" || format === "percent"
+        ? decimals ?? 1
+        : undefined,
+  });
+
+  if (format === "percent") {
+    return `${formatter.format(value)}%`;
+  }
+  return formatter.format(value);
+};
+
 export const Renderer: React.FC<RendererProps> = ({ component, styles }) => {
   const binding: DataBindingConfig | undefined = component.data_binding;
   const style = applyStyle(
@@ -76,42 +135,53 @@ export const Renderer: React.FC<RendererProps> = ({ component, styles }) => {
     styles
   ) as CSSProperties;
 
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [fetchedData, setFetchedData] = useState<any[]>([]);
+  const [rawPayload, setRawPayload] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const chartTypes: ChartType[] = [
-      "line-chart",
-      "bar-chart",
-      "pie-chart",
-      "radar-chart",
-      "radial-bar-chart",
-    ];
-    if (!chartTypes.includes(component.type as ChartType)) {
+    const needsBinding = Boolean(binding?.endpoint);
+    if (!needsBinding) {
+      setFetchedData([]);
+      setRawPayload(null);
+      setLoading(false);
+      setError(null);
       return;
     }
     const endpoint = resolveEndpoint(binding);
     if (!endpoint) {
-      setChartData([]);
+      setFetchedData([]);
+      setRawPayload(null);
       return;
     }
 
+    let cancelled = false;
     setLoading(true);
     setError(null);
     axios
       .get(endpoint)
       .then((response) => {
+        if (cancelled) {
+          return;
+        }
+        setRawPayload(response.data);
         const rows = extractDataRows(response.data, binding?.entity);
-        setChartData(rows);
+        const transformed = applyBindingTransforms(rows, binding);
+        setFetchedData(transformed);
       })
       .catch((err) => {
         console.error("Failed to fetch chart data", err);
-        setError("Unable to load chart data");
-        setChartData([]);
+        if (!cancelled) {
+          setError("Unable to load data");
+          setFetchedData([]);
+        }
       })
       .finally(() => setLoading(false));
-  }, [component.id, component.type, binding]);
+    return () => {
+      cancelled = true;
+    };
+  }, [component.id, binding]);
 
   if (component.type === "container" || component.type === "wrapper") {
     return (
@@ -199,6 +269,121 @@ export const Renderer: React.FC<RendererProps> = ({ component, styles }) => {
     );
   }
 
+  if (component.type === "stat-card") {
+    if (binding?.endpoint) {
+      if (loading) {
+        return <div id={component.id}>Loading metric…</div>;
+      }
+      if (error) {
+        return <div id={component.id}>{error}</div>;
+      }
+    }
+
+    const statConfig = component.stat || {};
+    let rowsForStat = fetchedData;
+
+    if (
+      statConfig.match_field &&
+      statConfig.match_value !== undefined &&
+      statConfig.match_value !== null
+    ) {
+      rowsForStat = rowsForStat.filter(
+        (row) =>
+          getNestedValue(row, statConfig.match_field) ===
+          statConfig.match_value
+      );
+    }
+
+    if (statConfig.top_n && Number.isFinite(statConfig.top_n)) {
+      rowsForStat = rowsForStat.slice(0, statConfig.top_n);
+    }
+
+    const itemIndex =
+      Number.isInteger(statConfig.item_index) && statConfig.item_index >= 0
+        ? statConfig.item_index
+        : 0;
+
+    let selectedItem =
+      rowsForStat[itemIndex] ?? rowsForStat[0] ?? fetchedData[0] ?? null;
+
+    if (!selectedItem && rawPayload) {
+      selectedItem = rawPayload;
+    }
+
+    const valueField =
+      statConfig.value_field ||
+      binding?.data_field ||
+      binding?.label_field ||
+      "value";
+    const rawValue =
+      selectedItem !== null && selectedItem !== undefined
+        ? getNestedValue(selectedItem, valueField)
+        : statConfig.fallback_value;
+
+    let formattedValue = "—";
+    if (rawValue !== undefined && rawValue !== null) {
+      if (typeof rawValue === "number") {
+        formattedValue = formatNumericValue(
+          rawValue,
+          statConfig.value_format,
+          statConfig.decimals
+        );
+      } else if (!Number.isNaN(Number(rawValue))) {
+        formattedValue = formatNumericValue(
+          Number(rawValue),
+          statConfig.value_format,
+          statConfig.decimals
+        );
+      } else {
+        formattedValue = String(rawValue);
+      }
+    }
+
+    if (statConfig.value_suffix) {
+      formattedValue = `${formattedValue}${statConfig.value_suffix}`;
+    }
+
+    let subtitle: string | undefined =
+      component.subtitle || statConfig.subtitle_text;
+    if (statConfig.subtitle_field) {
+      const subtitleSource =
+        (statConfig.subtitle_source === "payload" ? rawPayload : selectedItem) ??
+        selectedItem;
+      const rawSubtitle = getNestedValue(
+        subtitleSource,
+        statConfig.subtitle_field
+      );
+      if (rawSubtitle !== undefined && rawSubtitle !== null) {
+        if (
+          statConfig.subtitle_format === "date" ||
+          statConfig.subtitle_format === "datetime"
+        ) {
+          const parsed = new Date(rawSubtitle);
+          if (!Number.isNaN(parsed.getTime())) {
+            subtitle =
+              statConfig.subtitle_format === "date"
+                ? parsed.toLocaleDateString()
+                : parsed.toLocaleString();
+          } else {
+            subtitle = String(rawSubtitle);
+          }
+        } else {
+          subtitle = String(rawSubtitle);
+        }
+      }
+    }
+
+    return (
+      <StatCardComponent
+        id={component.id}
+        title={component.title || component.name}
+        value={formattedValue}
+        subtitle={subtitle}
+        styles={style}
+      />
+    );
+  }
+
   const ChartComponent = chartComponents[component.type as ChartType];
   if (ChartComponent) {
     const labelField = binding?.label_field || "label";
@@ -216,7 +401,7 @@ export const Renderer: React.FC<RendererProps> = ({ component, styles }) => {
         id={component.id}
         title={component.title || component.name}
         color={component.color}
-        data={chartData}
+        data={fetchedData}
         labelField={labelField}
         dataField={dataField}
         options={component.chart || {}}

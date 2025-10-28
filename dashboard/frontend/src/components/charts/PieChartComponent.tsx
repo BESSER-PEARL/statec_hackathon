@@ -57,10 +57,9 @@ export const PieChartComponent: React.FC<Props> = ({
     <div id={id} style={containerStyle}>
       {title && <h3 style={{ textAlign: "center" }}>{title}</h3>}
       <ResponsiveContainer width="100%" height="80%">
-        <PieChart>
+        <PieChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           <Pie
             data={data}
-            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
             dataKey={dataField}
             nameKey={labelField}
             innerRadius={options?.innerRadius}

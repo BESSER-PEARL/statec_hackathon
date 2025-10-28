@@ -1,0 +1,846 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Statec Census API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "meta"
+        ],
+        "summary": "Healthcheck",
+        "operationId": "healthcheck_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthcheck Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "List Datasets",
+        "operationId": "list_datasets_datasets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DataTableSummary"
+                  },
+                  "type": "array",
+                  "title": "Response List Datasets Datasets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets/{dataset_code}": {
+      "get": {
+        "tags": [
+          "datasets"
+        ],
+        "summary": "Get Dataset",
+        "operationId": "get_dataset_datasets__dataset_code__get",
+        "parameters": [
+          {
+            "name": "dataset_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DataTableDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets/{dataset_code}/dimensions/{dimension_code}": {
+      "get": {
+        "tags": [
+          "dimensions"
+        ],
+        "summary": "Get Dimension Detail",
+        "operationId": "get_dimension_detail_datasets__dataset_code__dimensions__dimension_code__get",
+        "parameters": [
+          {
+            "name": "dataset_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Code"
+            }
+          },
+          {
+            "name": "dimension_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dimension Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DimensionDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets/{dataset_code}/observations": {
+      "get": {
+        "tags": [
+          "observations"
+        ],
+        "summary": "List Observations",
+        "operationId": "list_observations_datasets__dataset_code__observations_get",
+        "parameters": [
+          {
+            "name": "dataset_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Code"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "exclusiveMinimum": 0,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ObservationPoint"
+                  },
+                  "title": "Response List Observations Datasets  Dataset Code  Observations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets/{dataset_code}/aggregates": {
+      "get": {
+        "tags": [
+          "observations"
+        ],
+        "summary": "Aggregate Dataset",
+        "operationId": "aggregate_dataset_datasets__dataset_code__aggregates_get",
+        "parameters": [
+          {
+            "name": "dataset_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Code"
+            }
+          },
+          {
+            "name": "dimension",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Dimension"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 500,
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(?i)(asc|desc)$",
+              "default": "desc",
+              "title": "Order"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datasets/{dataset_code}/insights/ageing": {
+      "get": {
+        "tags": [
+          "insights"
+        ],
+        "summary": "Ageing Insights",
+        "operationId": "ageing_insights_datasets__dataset_code__insights_ageing_get",
+        "parameters": [
+          {
+            "name": "dataset_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgeingInsights"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AgeingInsights": {
+        "properties": {
+          "dataset_code": {
+            "type": "string",
+            "title": "Dataset Code"
+          },
+          "time_period": {
+            "type": "string",
+            "title": "Time Period"
+          },
+          "population_total": {
+            "type": "number",
+            "title": "Population Total"
+          },
+          "children_population": {
+            "type": "number",
+            "title": "Children Population"
+          },
+          "working_age_population": {
+            "type": "number",
+            "title": "Working Age Population"
+          },
+          "seniors_population": {
+            "type": "number",
+            "title": "Seniors Population"
+          },
+          "share_children": {
+            "type": "number",
+            "title": "Share Children"
+          },
+          "share_seniors": {
+            "type": "number",
+            "title": "Share Seniors"
+          },
+          "share_80_plus": {
+            "type": "number",
+            "title": "Share 80 Plus"
+          },
+          "old_age_dependency_ratio": {
+            "type": "number",
+            "title": "Old Age Dependency Ratio"
+          },
+          "age_buckets": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateItem"
+            },
+            "type": "array",
+            "title": "Age Buckets"
+          },
+          "seniors_by_sex": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateItem"
+            },
+            "type": "array",
+            "title": "Seniors By Sex"
+          },
+          "seniors_by_marital_status": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateItem"
+            },
+            "type": "array",
+            "title": "Seniors By Marital Status"
+          },
+          "senior_age_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Senior Age Codes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_code",
+          "time_period",
+          "population_total",
+          "children_population",
+          "working_age_population",
+          "seniors_population",
+          "share_children",
+          "share_seniors",
+          "share_80_plus",
+          "old_age_dependency_ratio",
+          "age_buckets",
+          "seniors_by_sex",
+          "seniors_by_marital_status",
+          "senior_age_codes"
+        ],
+        "title": "AgeingInsights"
+      },
+      "AggregateItem": {
+        "properties": {
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "category_label": {
+            "type": "string",
+            "title": "Category Label"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Share"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_code",
+          "category_label",
+          "value"
+        ],
+        "title": "AggregateItem"
+      },
+      "AggregateResponse": {
+        "properties": {
+          "dataset_code": {
+            "type": "string",
+            "title": "Dataset Code"
+          },
+          "dimension_code": {
+            "type": "string",
+            "title": "Dimension Code"
+          },
+          "filters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Filters"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AggregateItem"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_code",
+          "dimension_code",
+          "filters",
+          "results"
+        ],
+        "title": "AggregateResponse"
+      },
+      "CategoryRead": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "parent_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "CategoryRead"
+      },
+      "DataTableDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "dimension_count": {
+            "type": "integer",
+            "title": "Dimension Count"
+          },
+          "observation_count": {
+            "type": "integer",
+            "title": "Observation Count"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/DimensionSummary"
+            },
+            "type": "array",
+            "title": "Dimensions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "dimension_count",
+          "observation_count",
+          "dimensions"
+        ],
+        "title": "DataTableDetail"
+      },
+      "DataTableSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "dimension_count": {
+            "type": "integer",
+            "title": "Dimension Count"
+          },
+          "observation_count": {
+            "type": "integer",
+            "title": "Observation Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "dimension_count",
+          "observation_count"
+        ],
+        "title": "DataTableSummary"
+      },
+      "DimensionDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "codelist_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codelist Id"
+          },
+          "category_count": {
+            "type": "integer",
+            "title": "Category Count"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryRead"
+            },
+            "type": "array",
+            "title": "Categories"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "label",
+          "position",
+          "category_count",
+          "categories"
+        ],
+        "title": "DimensionDetail"
+      },
+      "DimensionSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "codelist_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Codelist Id"
+          },
+          "category_count": {
+            "type": "integer",
+            "title": "Category Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "label",
+          "position",
+          "category_count"
+        ],
+        "title": "DimensionSummary"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ObservationPoint": {
+        "properties": {
+          "observation_id": {
+            "type": "integer",
+            "title": "Observation Id"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "time_period": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Period"
+          },
+          "dimensions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Dimensions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_id",
+          "value",
+          "dimensions"
+        ],
+        "title": "ObservationPoint"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}
