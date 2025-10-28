@@ -12,7 +12,7 @@
             {
               "type": "text",
               "id": "hero-flag",
-              "content": "STATEC Hackathon · Ageing Luxembourg",
+              "content": "STATEC Hackathon - Ageing Luxembourg",
               "tag": "p"
             },
             {
@@ -24,14 +24,114 @@
             {
               "type": "text",
               "id": "hero-lead",
-              "content": "This dashboard combines the 2021 census cube with reusable APIs to quantify Luxembourg’s population ageing. Explore headline indicators, then dig deeper with the insight builder below.",
+              "content": "This dashboard combines the 2021 census cube with reusable APIs to quantify Luxembourg's population ageing. Explore headline indicators, then dig deeper with the insight builder below.",
+              "tag": "p"
+            },
+            {
+              "type": "text",
+              "id": "hero-context",
+              "content": "Use the cards and charts to understand who is growing older, how they differ, and where policy pressure may appear first.",
               "tag": "p"
             }
           ]
         },
         {
           "type": "wrapper",
-          "id": "generated-charts",
+          "id": "headline-metrics",
+          "children": [
+            {
+              "type": "stat-card",
+              "id": "metric-population-total",
+              "title": "Residents",
+              "subtitle": "Census 2021",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing"
+              },
+              "stat": {
+                "value_field": "population_total",
+                "value_format": "decimal",
+                "decimals": 0
+              }
+            },
+            {
+              "type": "stat-card",
+              "id": "metric-seniors-population",
+              "title": "People aged 65+",
+              "subtitle": "Residents aged 65 and older",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing"
+              },
+              "stat": {
+                "value_field": "seniors_population",
+                "value_format": "decimal",
+                "decimals": 0
+              }
+            },
+            {
+              "type": "stat-card",
+              "id": "metric-senior-share",
+              "title": "Share aged 65+",
+              "subtitle": "Percentage of all residents",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing"
+              },
+              "stat": {
+                "value_field": "share_seniors",
+                "value_format": "percent",
+                "decimals": 1
+              }
+            },
+            {
+              "type": "stat-card",
+              "id": "metric-dependency-ratio",
+              "title": "Old-age dependency",
+              "subtitle": "Seniors per 100 working-age residents",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing"
+              },
+              "stat": {
+                "value_field": "old_age_dependency_ratio",
+                "value_format": "percent",
+                "decimals": 1
+              }
+            },
+            {
+              "type": "stat-card",
+              "id": "metric-80-share",
+              "title": "Aged 80 and older",
+              "subtitle": "Part of the senior population",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing"
+              },
+              "stat": {
+                "value_field": "share_80_plus",
+                "value_format": "percent",
+                "decimals": 1
+              }
+            }
+          ]
+        },
+        {
+          "type": "wrapper",
+          "id": "narrative-section",
+          "children": [
+            {
+              "type": "text",
+              "id": "narrative-heading",
+              "content": "What the numbers tell us",
+              "tag": "h2"
+            },
+            {
+              "type": "text",
+              "id": "narrative-body",
+              "content": "Luxembourg's ageing is real but still comparatively young. The dependency ratio hints at growing pressure on services, while the large gap between residents and seniors shows that growth is concentrated in prime working ages. Keep an eye on the 80+ group, which already makes up a notable share of seniors.",
+              "tag": "p"
+            }
+          ]
+        },
+        {
+          "type": "wrapper",
+          "id": "chart-grid",
           "children": [
             {
               "type": "bar-chart",
@@ -39,22 +139,19 @@
               "title": "Age structure highlights",
               "color": "#4F46E5",
               "data_binding": {
-                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/aggregates?dimension=AGE&TIME_PERIOD=2021&MEASURE=POP&UNIT_MEASURE=PERS&FREQ=A10&SEX=_T&LMS=_T&limit=6",
-                "entity": "results",
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing",
+                "entity": "age_buckets",
                 "label_field": "category_label",
                 "data_field": "share",
-                "code_field": "category_code",
-                "omit_codes": [
-                  "_T"
-                ]
+                "code_field": "category_code"
               },
               "chart": {
                 "orientation": "vertical",
                 "showGrid": true,
                 "showLegend": false,
                 "showTooltip": true,
-                "barWidth": 36,
-                "barGap": 6
+                "barWidth": 40,
+                "barGap": 10
               }
             },
             {
@@ -62,14 +159,11 @@
               "id": "senior-gender-pie",
               "title": "Gender balance among seniors",
               "data_binding": {
-                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/aggregates?dimension=SEX&TIME_PERIOD=2021&MEASURE=POP&UNIT_MEASURE=PERS&FREQ=A10&AGE=_T&LMS=_T",
-                "entity": "results",
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing",
+                "entity": "seniors_by_sex",
                 "label_field": "category_label",
                 "data_field": "share",
-                "code_field": "category_code",
-                "omit_codes": [
-                  "_T"
-                ]
+                "code_field": "category_code"
               },
               "chart": {
                 "showLegend": true,
@@ -78,6 +172,51 @@
                 "innerRadius": 60,
                 "outerRadius": 110
               }
+            },
+            {
+              "type": "bar-chart",
+              "id": "senior-marital-status",
+              "title": "Marital status of seniors",
+              "color": "#0EA5E9",
+              "data_binding": {
+                "endpoint": "/datasets/DSD_CENSUS_GROUP1_3@DF_B1600/insights/ageing",
+                "entity": "seniors_by_marital_status",
+                "label_field": "category_label",
+                "data_field": "share",
+                "code_field": "category_code"
+              },
+              "chart": {
+                "orientation": "horizontal",
+                "showGrid": false,
+                "showLegend": false,
+                "showTooltip": true,
+                "barWidth": 28,
+                "barGap": 8
+              }
+            }
+          ]
+        },
+        {
+          "type": "wrapper",
+          "id": "callout-section",
+          "children": [
+            {
+              "type": "text",
+              "id": "callout-heading",
+              "content": "Build your own view",
+              "tag": "h2"
+            },
+            {
+              "type": "text",
+              "id": "callout-body",
+              "content": "Scroll down to the playground to explore the census cube. Switch dataset dimensions, compare value types, and export observation samples that match your filters.",
+              "tag": "p"
+            },
+            {
+              "type": "text",
+              "id": "callout-method",
+              "content": "Method notes: figures rely on STATEC's 2021 census (dataset DSD_CENSUS_GROUP1_3@DF_B1600). Totals include residents of all legal statuses and the shares use the cube totals returned by the API.",
+              "tag": "p"
             }
           ]
         }

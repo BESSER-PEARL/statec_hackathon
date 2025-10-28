@@ -227,14 +227,19 @@ def store_metadata(
     new_dims_count = 0
     new_cats_count = 0
 
+    pending_parents: List[Tuple[Category, str]] = []
+
     for dim_meta in sorted(
         metadata["dimensions"], key=lambda item: item["position"] or 0
     ):
-        # Check if dimension already exists globally (not just for this datatable)
+        # Reuse a dimension only when it already belongs to the current dataset
         existing_dimension = (
             session.query(Dimension)
-            .filter(Dimension.code == dim_meta["code"])
-            .first()
+            .filter(
+                Dimension.data_table_id == datatable.id,
+                Dimension.code == dim_meta["code"],
+            )
+            .one_or_none()
         )
         
         if existing_dimension:
@@ -258,14 +263,16 @@ def store_metadata(
         category_lookup[dimension.code] = {}
 
         categories_meta = codelists.get(dimension.codelist_id, [])
-        pending_parents = []
         
         for cat_meta in categories_meta:
-            # Check if category already exists globally (by code only, since codes are unique across all categories)
+            # Reuse a category only when it belongs to the current dimension
             existing_category = (
                 session.query(Category)
-                .filter(Category.code == cat_meta["code"])
-                .first()
+                .filter(
+                    Category.dimension_id == dimension.id,
+                    Category.code == cat_meta["code"],
+                )
+                .one_or_none()
             )
             
             if existing_category:
