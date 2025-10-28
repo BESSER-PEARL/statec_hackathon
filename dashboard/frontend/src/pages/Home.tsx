@@ -19,6 +19,7 @@ import stylesData from "../data/ui_styles.json";
 import { Renderer } from "../components/Renderer";
 import { applyStyle, StyleData } from "../utils/applyStyle";
 import { StatCardComponent } from "../components/StatCardComponent";
+import MapComponent from "../components/MapComponent";
 
 import "./Home.css";
 
@@ -572,6 +573,12 @@ const Home: React.FC = () => {
           <div className="page--error">No screens defined in the generated GUI model.</div>
         )}
       </div>
+
+      {/* Map section */}
+      <section style={{ margin: "32px 0" }}>
+        <h2>Luxembourg Communes Map</h2>
+        <MapComponent />
+      </section>
 
       <section className="metrics-grid">
         {metrics.map((metric) => (
