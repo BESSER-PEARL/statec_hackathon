@@ -1,0 +1,181 @@
+{
+  "pages": [
+    {
+      "components": [
+        {
+          "attributes": {
+            "bar-width": 30,
+            "chart-color": "#3498db",
+            "chart-title": "Revenue by Category",
+            "data-field": "",
+            "data-source": "",
+            "id": "ie5m",
+            "label-field": "",
+            "orientation": "vertical",
+            "show-grid": true,
+            "show-legend": true,
+            "stacked": false
+          },
+          "chart": {
+            "animate": true,
+            "barGap": 4,
+            "barWidth": 30,
+            "gridColor": "#e0e0e0",
+            "legendPosition": "top",
+            "orientation": "vertical",
+            "showGrid": true,
+            "showLegend": true,
+            "showTooltip": true,
+            "stacked": false
+          },
+          "class_list": [
+            "bar-chart-component"
+          ],
+          "color": "#3498db",
+          "id": "ie5m",
+          "name": "Revenue by Category",
+          "title": "Revenue by Category",
+          "type": "bar-chart"
+        },
+        {
+          "attributes": {
+            "animate": true,
+            "chart-color": "#4CAF50",
+            "chart-title": "Sales Over Time",
+            "curve-type": "monotone",
+            "data-field": "",
+            "data-source": "",
+            "id": "ijor",
+            "label-field": "",
+            "line-width": 2,
+            "show-grid": true,
+            "show-legend": true,
+            "show-tooltip": true
+          },
+          "chart": {
+            "animate": true,
+            "curveType": "monotone",
+            "dotSize": 5,
+            "gridColor": "#e0e0e0",
+            "legendPosition": "top",
+            "lineWidth": 2,
+            "showGrid": true,
+            "showLegend": true,
+            "showTooltip": true
+          },
+          "class_list": [
+            "line-chart-component"
+          ],
+          "color": "#4CAF50",
+          "id": "ijor",
+          "name": "Sales Over Time",
+          "title": "Sales Over Time",
+          "type": "line-chart"
+        },
+        {
+          "attributes": {
+            "id": "ijql"
+          },
+          "content": "Statec Hackathon",
+          "description": "Text element",
+          "id": "ijql",
+          "name": "Statec Hackathon",
+          "type": "text"
+        },
+        {
+          "attributes": {
+            "chart-title": "Customer Satisfaction",
+            "data-field": "",
+            "data-source": "",
+            "end-angle": 450,
+            "id": "ik7mh",
+            "label-field": "",
+            "start-angle": 90
+          },
+          "chart": {
+            "endAngle": 450,
+            "innerRadius": 30,
+            "legendPosition": "top",
+            "outerRadius": 80,
+            "showLegend": true,
+            "showTooltip": true,
+            "startAngle": 90
+          },
+          "class_list": [
+            "radial-bar-chart-component"
+          ],
+          "id": "ik7mh",
+          "name": "Customer Satisfaction",
+          "title": "Customer Satisfaction",
+          "type": "radial-bar-chart"
+        },
+        {
+          "attributes": {
+            "chart-title": "Traffic Distribution",
+            "data-field": "",
+            "data-source": "",
+            "id": "ikva",
+            "label-field": "",
+            "label-position": "inside",
+            "legend-position": "right",
+            "padding-angle": 0,
+            "show-labels": true,
+            "show-legend": true
+          },
+          "chart": {
+            "endAngle": 360,
+            "innerRadius": 0,
+            "labelPosition": "inside",
+            "legendPosition": "right",
+            "outerRadius": 80,
+            "paddingAngle": 0,
+            "showLabels": true,
+            "showLegend": true,
+            "startAngle": 0
+          },
+          "class_list": [
+            "pie-chart-component"
+          ],
+          "id": "ikva",
+          "name": "Traffic Distribution",
+          "title": "Traffic Distribution",
+          "type": "pie-chart"
+        },
+        {
+          "attributes": {
+            "chart-color": "#8884d8",
+            "chart-title": "Performance Metrics",
+            "data-field": "",
+            "data-source": "",
+            "id": "isvaj",
+            "label-field": "",
+            "show-grid": true,
+            "show-radius-axis": true,
+            "show-tooltip": true
+          },
+          "chart": {
+            "dotSize": 3,
+            "gridType": "polygon",
+            "legendPosition": "top",
+            "showGrid": true,
+            "showLegend": true,
+            "showRadiusAxis": true,
+            "showTooltip": true,
+            "strokeWidth": 2
+          },
+          "class_list": [
+            "radar-chart-component"
+          ],
+          "id": "isvaj",
+          "name": "Performance Metrics",
+          "title": "Performance Metrics",
+          "type": "radar-chart"
+        }
+      ],
+      "description": "Home",
+      "id": "icnh",
+      "is_main": true,
+      "name": "Home"
+    }
+  ]
+}

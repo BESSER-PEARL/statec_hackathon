@@ -1,0 +1,149 @@
+{
+  "styles": [
+    {
+      "selectors": [
+        "#icnh"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#000000",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "auto",
+        "margin": "0",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "auto",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#ie5m"
+      ],
+      "style": {
+        "--chart-bar-color": "#3498db",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#000000",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "400px",
+        "margin": "0",
+        "minHeight": "400px",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "100%",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#ijor"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#4CAF50",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "400px",
+        "margin": "0",
+        "minHeight": "400px",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "100%",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#ijql"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#000000",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "auto",
+        "margin": "0",
+        "padding": "10px",
+        "position": "static",
+        "textAlign": "left",
+        "width": "auto",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#ik7mh"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#000000",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "400px",
+        "margin": "0",
+        "minHeight": "400px",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "100%",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#ikva"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#000000",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "400px",
+        "margin": "0",
+        "minHeight": "400px",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "100%",
+        "zIndex": 0
+      }
+    },
+    {
+      "selectors": [
+        "#isvaj"
+      ],
+      "style": {
+        "--chart-bar-color": "#CCCCCC",
+        "--chart-color-palette": "default",
+        "--chart-line-color": "#8884d8",
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#CCCCCC",
+        "color": "#000000",
+        "height": "400px",
+        "margin": "0",
+        "minHeight": "400px",
+        "padding": "0",
+        "position": "static",
+        "textAlign": "left",
+        "width": "100%",
+        "zIndex": 0
+      }
+    }
+  ]
+}
