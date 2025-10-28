@@ -141,10 +141,10 @@ def get_dataset(dataset_code: str, db: Session = Depends(get_db)) -> DataTableDe
     datatable = _get_datatable_by_code(db, dataset_code)
     dimension_counts, observation_counts = _counts_by_table(db)
 
-    # Get ALL dimensions (they're now global, not per-datatable)
-    # But count categories that are actually used in observations for this dataset
+    # Load only the dimensions attached to this dataset
     dimensions = (
         db.query(Dimension)
+        .filter(Dimension.data_table_id == datatable.id)
         .order_by(Dimension.position, Dimension.code)
         .all()
     )
@@ -153,6 +153,7 @@ def get_dataset(dataset_code: str, db: Session = Depends(get_db)) -> DataTableDe
     category_counts: Dict[int, int] = dict(
         db.query(Dimension.id, func.count(Category.id.distinct()))
         .join(Category, Category.dimension_id == Dimension.id)
+        .filter(Dimension.data_table_id == datatable.id)
         .group_by(Dimension.id)
         .all()
     )
@@ -193,13 +194,16 @@ def get_dimension_detail(
 ) -> DimensionDetail:
     # URL decode dataset code (not needed for dimension_code as it's simple)
     dataset_code = unquote(dataset_code)
-    # Dimensions are now global, so just query by code
+    datatable = _get_datatable_by_code(db, dataset_code)
     dimension: Optional[Dimension] = (
         db.query(Dimension)
         .options(
             selectinload(Dimension.categories).selectinload(Category.parent)
         )
-        .filter(Dimension.code == dimension_code)
+        .filter(
+            Dimension.data_table_id == datatable.id,
+            Dimension.code == dimension_code,
+        )
         .one_or_none()
     )
     if dimension is None:
@@ -343,10 +347,13 @@ def _aggregate_dimension(
     dimension_code = dimension_code.upper()
     filt = _normalise_filter_values(filters)
 
-    # Dimensions are now global, query by code only
     agg_dimension = (
         db.query(Dimension)
-        .filter(Dimension.code == dimension_code)
+        .options(selectinload(Dimension.categories))
+        .filter(
+            Dimension.data_table_id == datatable.id,
+            Dimension.code == dimension_code,
+        )
         .one_or_none()
     )
     if agg_dimension is None:
@@ -515,7 +522,25 @@ def ageing_insights(
         "FREQ": ["A10"],
     }
 
-    age_filters = {**base_filters, "SEX": ["_T"], "LMS": ["_T"]}
+    default_totals = _default_total_filters(datatable)
+
+    def with_default_totals(
+        filters: Dict[str, Sequence[str]],
+        skip: Sequence[str] = (),
+    ) -> Dict[str, Sequence[str]]:
+        merged: Dict[str, Sequence[str]] = dict(filters)
+        skip_set = {code.upper() for code in skip}
+        for dim_code, category_code in default_totals.items():
+            if dim_code in skip_set:
+                continue
+            if dim_code not in merged:
+                if isinstance(category_code, (list, tuple, set)):
+                    merged[dim_code] = [str(value) for value in category_code]  # type: ignore[assignment]
+                else:
+                    merged[dim_code] = [category_code]
+        return merged
+
+    age_filters = with_default_totals(base_filters, skip=("AGE",))
 
     age_results, _, total_value = _aggregate_dimension(
         db,
@@ -628,11 +653,13 @@ def ageing_insights(
             2,
         )
 
-    senior_filters_for_sex: Dict[str, Sequence[str]] = {
-        **base_filters,
-        "AGE": seniors_codes,
-    }
-    senior_filters_for_sex.setdefault("LMS", ["_T"])
+    senior_filters_for_sex = with_default_totals(
+        {
+            **base_filters,
+            "AGE": seniors_codes,
+        },
+        skip=("SEX",),
+    )
 
     seniors_by_sex, _, _ = _aggregate_dimension(
         db,
@@ -642,11 +669,14 @@ def ageing_insights(
         order="desc",
     )
 
-    senior_filters_for_marital: Dict[str, Sequence[str]] = {
-        **base_filters,
-        "AGE": seniors_codes,
-        "SEX": ["_T"],
-    }
+    senior_filters_for_marital = with_default_totals(
+        {
+            **base_filters,
+            "AGE": seniors_codes,
+            "SEX": ["_T"],
+        },
+        skip=("LMS",),
+    )
 
     seniors_by_marital, _, _ = _aggregate_dimension(
         db,

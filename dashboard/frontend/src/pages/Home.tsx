@@ -91,12 +91,6 @@ const API_BASE =
   "http://localhost:8000";
 const OBSERVATION_LIMIT = 25;
 
-const dimensionOptions: { value: "AGE" | "LMS" | "SEX"; label: string }[] = [
-  { value: "AGE", label: "Age groups" },
-  { value: "LMS", label: "Legal marital status" },
-  { value: "SEX", label: "Sex" },
-];
-
 const chartOptions: { value: "bar" | "pie"; label: string }[] = [
   { value: "bar", label: "Bar chart" },
   { value: "pie", label: "Pie chart" },
@@ -136,7 +130,7 @@ const Home: React.FC = () => {
   const [dimensionCategoriesLoading, setDimensionCategoriesLoading] = useState<Record<string, boolean>>({});
   const [dimensionCategoriesError, setDimensionCategoriesError] = useState<Record<string, string>>({});
 
-  const [selectedDimension, setSelectedDimension] = useState<"AGE" | "LMS" | "SEX">("AGE");
+  const [selectedDimension, setSelectedDimension] = useState<string>("");
   const [chartType, setChartType] = useState<"bar" | "pie">("bar");
   const [valueType, setValueType] = useState<"share" | "value">("share");
 
@@ -197,6 +191,29 @@ const Home: React.FC = () => {
 
     fetchDetail();
   }, [selectedDataset]);
+
+  const dimensionOptions = useMemo(
+    () =>
+      (datasetDetail?.dimensions ?? []).map((dimension) => ({
+        value: dimension.code,
+        label: dimension.label || dimension.code,
+      })),
+    [datasetDetail]
+  );
+
+  useEffect(() => {
+    if (!datasetDetail || datasetDetail.dimensions.length === 0) {
+      setSelectedDimension("");
+      return;
+    }
+    setSelectedDimension((current) => {
+      if (current && datasetDetail.dimensions.some((dimension) => dimension.code === current)) {
+        return current;
+      }
+      const preferred = datasetDetail.dimensions.find((dimension) => dimension.category_count > 1);
+      return preferred?.code ?? datasetDetail.dimensions[0].code;
+    });
+  }, [datasetDetail]);
 
   useEffect(() => {
     if (!selectedDataset) {
@@ -282,7 +299,7 @@ const Home: React.FC = () => {
     insights && insights.dataset_code === selectedDataset ? insights : null;
 
   const fetchDimensionCategories = useCallback(async (dimensionCode: string) => {
-    if (!selectedDataset) {
+    if (!selectedDataset || !dimensionCode) {
       return;
     }
     if (dimensionCategories[dimensionCode] || dimensionCategoriesLoading[dimensionCode]) {
@@ -331,14 +348,14 @@ const Home: React.FC = () => {
   }, [selectedDataset, dimensionCategories, dimensionCategoriesLoading]);
 
   useEffect(() => {
-    if (!datasetDetail) {
+    if (!datasetDetail || !selectedDimension) {
       return;
     }
     fetchDimensionCategories(selectedDimension);
   }, [datasetDetail, selectedDataset, selectedDimension, fetchDimensionCategories]);
 
   useEffect(() => {
-    if (!selectedDataset) {
+    if (!selectedDataset || !datasetDetail || !selectedDimension) {
       return;
     }
 
@@ -349,18 +366,20 @@ const Home: React.FC = () => {
 
         const params = new URLSearchParams();
         params.set("dimension", selectedDimension);
-        const timePeriod = activeInsights?.time_period ?? "2021";
-        params.set("TIME_PERIOD", timePeriod);
-        params.set("MEASURE", "POP");
-        params.set("UNIT_MEASURE", "PERS");
-        params.set("FREQ", "A10");
 
-        if (datasetDetail) {
-          filteredDimensions.forEach((dimension) => {
-            const filterValue = dimensionFilters[dimension.code] ?? "_T";
-            params.set(dimension.code, filterValue);
-          });
+        const hasTimeDimension = datasetDetail.dimensions.some(
+          (dimension) => dimension.code === "TIME_PERIOD"
+        );
+        if (hasTimeDimension && activeInsights?.time_period) {
+          params.set("TIME_PERIOD", activeInsights.time_period);
         }
+
+        Object.entries(dimensionFilters).forEach(([dimensionCode, filterValue]) => {
+          if (!filterValue || dimensionCode === selectedDimension) {
+            return;
+          }
+          params.set(dimensionCode, filterValue);
+        });
 
         const response = await axios.get<AggregateResponse>(
           `${API_BASE}/datasets/${selectedDataset}/aggregates`,
@@ -381,7 +400,7 @@ const Home: React.FC = () => {
     };
 
     fetchAggregates();
-  }, [selectedDataset, selectedDimension, dimensionFilters, datasetDetail, filteredDimensions, activeInsights?.time_period]);
+  }, [activeInsights?.time_period, datasetDetail, dimensionFilters, selectedDataset, selectedDimension]);
 
   const handleDimensionFilterChange = (dimensionCode: string, value: string) => {
     setDimensionFilters((prev) => ({ ...prev, [dimensionCode]: value }));
@@ -482,11 +501,14 @@ const Home: React.FC = () => {
   }, [widgetData, valueType]);
 
   const chartTitle = useMemo(() => {
-    const label =
-      dimensionOptions.find((option) => option.value === selectedDimension)?.label ??
-      selectedDimension;
-    return `${label} � ${valueType === "share" ? "percentage share" : "population count"}`;
-  }, [selectedDimension, valueType]);
+    if (!selectedDimension) {
+      return valueType === "share" ? "Percentage share" : "Population count";
+    }
+    const option = dimensionOptions.find((entry) => entry.value === selectedDimension);
+    const label = option?.label ?? selectedDimension;
+    const metricLabel = valueType === "share" ? "percentage share" : "population count";
+    return `${label} - ${metricLabel}`;
+  }, [dimensionOptions, selectedDimension, valueType]);
 
   const handleFetchObservations = async () => {
     if (!selectedDataset) {
@@ -631,15 +653,18 @@ const Home: React.FC = () => {
             <select
               id="dimension-select"
               value={selectedDimension}
-              onChange={(event) =>
-                setSelectedDimension(event.target.value as "AGE" | "LMS" | "SEX")
-              }
+              onChange={(event) => setSelectedDimension(event.target.value)}
+              disabled={dimensionOptions.length === 0}
             >
-              {dimensionOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              {dimensionOptions.length === 0 ? (
+                <option value="">No dimensions available</option>
+              ) : (
+                dimensionOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
