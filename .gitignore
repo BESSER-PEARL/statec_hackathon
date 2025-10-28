@@ -1,6 +1,6 @@
 # Sphinx documentation
 docs/_build/
-
+database/env/
 # virtual env
 Pipfile
 Pipfile.lock
