@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import requests
 from lxml import etree
@@ -208,69 +208,108 @@ def store_metadata(
             .one_or_none()
         )
     if existing:
-        LOGGER.info("Replacing existing metadata for dataflow %s", code)
-        session.delete(existing)
+        LOGGER.info("Using existing datatable for dataflow %s", code)
+        datatable = existing
+    else:
+        datatable = DataTable(
+            code=code or "UNKNOWN",
+            name=dataflow.get("name") or code or "Unknown dataset",
+            description=dataflow.get("description"),
+            provider=dataflow.get("agency"),
+        )
+        session.add(datatable)
         session.flush()
-
-    datatable = DataTable(
-        code=code or "UNKNOWN",
-        name=dataflow.get("name") or code or "Unknown dataset",
-        description=dataflow.get("description"),
-        provider=dataflow.get("agency"),
-    )
-    session.add(datatable)
-    session.flush()
 
     dimension_lookup: Dict[str, Dimension] = {}
     category_lookup: Dict[str, Dict[str, Category]] = {}
     codelists = metadata["codelists"]
+    
+    new_dims_count = 0
+    new_cats_count = 0
 
     for dim_meta in sorted(
         metadata["dimensions"], key=lambda item: item["position"] or 0
     ):
-        dimension = Dimension(
-            code=dim_meta["code"],
-            name=dim_meta["name"],
-            label=dim_meta["label"],
-            position=dim_meta["position"] or 0,
-            codelist_id=dim_meta.get("codelist_id"),
-            data_table=datatable,
+        # Check if dimension already exists globally (not just for this datatable)
+        existing_dimension = (
+            session.query(Dimension)
+            .filter(Dimension.code == dim_meta["code"])
+            .first()
         )
-        session.add(dimension)
+        
+        if existing_dimension:
+            LOGGER.debug("Reusing existing dimension: %s", dim_meta["code"])
+            dimension = existing_dimension
+        else:
+            LOGGER.debug("Creating new dimension: %s", dim_meta["code"])
+            dimension = Dimension(
+                code=dim_meta["code"],
+                name=dim_meta["name"],
+                label=dim_meta["label"],
+                position=dim_meta["position"] or 0,
+                codelist_id=dim_meta.get("codelist_id"),
+                data_table=datatable,
+            )
+            session.add(dimension)
+            session.flush()
+            new_dims_count += 1
+        
         dimension_lookup[dimension.code] = dimension
         category_lookup[dimension.code] = {}
 
         categories_meta = codelists.get(dimension.codelist_id, [])
+        pending_parents = []
+        
         for cat_meta in categories_meta:
-            category = Category(
-                code=cat_meta["code"],
-                name=cat_meta["name"],
-                label=cat_meta["label"],
-                data_table=datatable,
-                dimension=dimension,
+            # Check if category already exists globally (by code only, since codes are unique across all categories)
+            existing_category = (
+                session.query(Category)
+                .filter(Category.code == cat_meta["code"])
+                .first()
             )
+            
+            if existing_category:
+                LOGGER.debug("Reusing existing category: %s", cat_meta["code"])
+                category = existing_category
+            else:
+                LOGGER.debug("Creating new category: %s", cat_meta["code"])
+                category = Category(
+                    code=cat_meta["code"],
+                    name=cat_meta["name"],
+                    label=cat_meta["label"],
+                    data_table=datatable,
+                    dimension=dimension,
+                )
+                session.add(category)
+                new_cats_count += 1
+            
             parent_code = cat_meta.get("parent")
             if parent_code:
-                category_lookup[dimension.code].setdefault("_pending", []).append(
-                    (category, parent_code)
-                )
+                pending_parents.append((category, parent_code))
+            
             category_lookup[dimension.code][category.code] = category
-            session.add(category)
 
     # Resolve parent relationships after all categories are registered
-    for dim_code, categories in category_lookup.items():
-        pending = categories.pop("_pending", [])
-        for category, parent_code in pending:
-            parent = categories.get(parent_code)
-            if parent is not None:
-                category.parent = parent
+    for category, parent_code in pending_parents:
+        # Find parent in the lookup or database
+        parent = None
+        for dim_code, categories in category_lookup.items():
+            if parent_code in categories:
+                parent = categories[parent_code]
+                break
+        if parent is not None and category.parent_id != parent.id:
+            category.parent = parent
 
     session.flush()
 
     LOGGER.info(
-        "Stored %d dimensions and %d categories",
+        "Dimensions: %d total (%d new, %d existing), Categories: %d total (%d new, %d existing)",
         len(dimension_lookup),
+        new_dims_count,
+        len(dimension_lookup) - new_dims_count,
         sum(len(cat_map) for cat_map in category_lookup.values()),
+        new_cats_count,
+        sum(len(cat_map) for cat_map in category_lookup.values()) - new_cats_count,
     )
     return datatable, dimension_lookup, category_lookup
 
@@ -312,17 +351,22 @@ def store_observations(
     observations_root: etree._Element,
 ) -> None:
     obs_count = 0
+    skipped_count = 0
+    
     for obs in observations_root.xpath(".//gen:Obs", namespaces=SDMX_NS):
         value_elem = obs.find("gen:ObsValue", namespaces=SDMX_NS)
         if value_elem is None:
+            skipped_count += 1
             continue
         raw_value = value_elem.get("value")
         if raw_value is None:
+            skipped_count += 1
             continue
         try:
             value = float(raw_value)
         except ValueError:
             LOGGER.debug("Skipping observation with non-numeric value %s", raw_value)
+            skipped_count += 1
             continue
 
         dim_values: Dict[str, str] = {}
@@ -339,6 +383,7 @@ def store_observations(
             data_table=datatable,
         )
         session.add(observation)
+        session.flush()  # Flush to get the observation ID
 
         for dim_code, category_code in dim_values.items():
             dimension = dimension_lookup.get(dim_code)
@@ -356,7 +401,7 @@ def store_observations(
             )
         obs_count += 1
 
-    LOGGER.info("Prepared %d observations for persistence", obs_count)
+    LOGGER.info("Stored %d observations (skipped %d invalid)", obs_count, skipped_count)
 
 
 # Add a new function to fetch data recurrently for multiple URLs
