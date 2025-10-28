@@ -33,8 +33,8 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 
-DATAFLOW_URL = "https://lustat.statec.lu/rest/dataflow/LU1/DSD_CENSUS_GROUP7_10@DF_B1628/1.0?references=all"
-DATA_URL = "https://lustat.statec.lu/rest/data/LU1,DSD_CENSUS_GROUP7_10@DF_B1628,1.0/..A10...................?dimensionAtObservation=AllDimensions"
+DATAFLOW_URL = "https://lustat.statec.lu/rest/dataflow/LU1/DSD_CENSUS_GROUP1_3@DF_B1600/1.0?references=all"
+DATA_URL = "https://lustat.statec.lu/rest/data/LU1,DSD_CENSUS_GROUP1_3@DF_B1600,1.0/..A10...................?dimensionAtObservation=AllDimensions"
 DEFAULT_TIMEOUT = 60
 LANG_PRIORITY = ("en", "fr", "de", "lb")
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
