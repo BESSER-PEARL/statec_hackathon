@@ -64,6 +64,8 @@ type DimensionCategory = {
 type DimensionDetailResponse = {
   code: string;
   label: string;
+  category_count: number;
+  applicable_category_count: number;
   categories: DimensionCategory[];
 };
 
@@ -75,7 +77,12 @@ type DatasetDetail = {
   updated_at?: string;
   dimension_count: number;
   observation_count: number;
-  dimensions: { code: string; label: string; category_count: number }[];
+  dimensions: {
+    code: string;
+    label: string;
+    category_count: number;
+    applicable_category_count: number;
+  }[];
 };
 
 type ObservationPoint = {
@@ -193,28 +200,41 @@ const Home: React.FC = () => {
     fetchDetail();
   }, [selectedDataset]);
 
-  const dimensionOptions = useMemo(
+  const applicableDimensions = useMemo(
     () =>
-      (datasetDetail?.dimensions ?? []).map((dimension) => ({
-        value: dimension.code,
-        label: dimension.label || dimension.code,
-      })),
+      (datasetDetail?.dimensions ?? []).filter(
+        (dimension) => dimension.applicable_category_count > 1
+      ),
     [datasetDetail]
   );
 
+  const dimensionOptions = useMemo(
+    () =>
+      applicableDimensions.map((dimension) => ({
+        value: dimension.code,
+        label: dimension.label || dimension.code,
+      })),
+    [applicableDimensions]
+  );
+
   useEffect(() => {
-    if (!datasetDetail || datasetDetail.dimensions.length === 0) {
+    if (!datasetDetail || applicableDimensions.length === 0) {
       setSelectedDimension("");
       return;
     }
     setSelectedDimension((current) => {
-      if (current && datasetDetail.dimensions.some((dimension) => dimension.code === current)) {
+      if (
+        current &&
+        applicableDimensions.some((dimension) => dimension.code === current)
+      ) {
         return current;
       }
-      const preferred = datasetDetail.dimensions.find((dimension) => dimension.category_count > 1);
-      return preferred?.code ?? datasetDetail.dimensions[0].code;
+      const preferred = applicableDimensions.find(
+        (dimension) => dimension.applicable_category_count > 1
+      );
+      return preferred?.code ?? applicableDimensions[0].code;
     });
-  }, [datasetDetail]);
+  }, [datasetDetail, applicableDimensions]);
 
   useEffect(() => {
     if (!selectedDataset) {
@@ -239,21 +259,21 @@ const Home: React.FC = () => {
   }, [selectedDataset]);
 
   const filteredDimensions = useMemo(() => {
-    if (!datasetDetail) {
+    if (!applicableDimensions.length) {
       return [];
     }
     // Filter out dimensions that should not be shown in filters
     // (e.g., the dimension being explored, or dimensions with only one category)
-    return datasetDetail.dimensions.filter((dimension) => {
+    return applicableDimensions.filter((dimension) => {
       if (dimension.code === selectedDimension) {
         return false; // Don't show the dimension we're exploring
       }
-      if (dimension.category_count <= 1) {
+      if (dimension.applicable_category_count <= 1) {
         return false; // No point filtering on single-category dimensions
       }
       return true;
     });
-  }, [datasetDetail, selectedDimension]);
+  }, [applicableDimensions, selectedDimension]);
 
   const getFilterableCategories = (dimensionCode: string) => {
     const categories = dimensionCategories[dimensionCode];
@@ -515,9 +535,9 @@ const Home: React.FC = () => {
     if (!selectedDataset) {
       return;
     }
-    if (datasetDetail) {
+    if (applicableDimensions.length > 0) {
       await Promise.all(
-        datasetDetail.dimensions.map((dimension) => fetchDimensionCategories(dimension.code))
+        applicableDimensions.map((dimension) => fetchDimensionCategories(dimension.code))
       );
     }
 

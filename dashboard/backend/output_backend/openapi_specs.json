@@ -695,6 +695,10 @@
             "type": "integer",
             "title": "Category Count"
           },
+          "applicable_category_count": {
+            "type": "integer",
+            "title": "Applicable Category Count"
+          },
           "categories": {
             "items": {
               "$ref": "#/components/schemas/CategoryRead"
@@ -710,6 +714,7 @@
           "label",
           "position",
           "category_count",
+          "applicable_category_count",
           "categories"
         ],
         "title": "DimensionDetail"
@@ -746,6 +751,10 @@
           "category_count": {
             "type": "integer",
             "title": "Category Count"
+          },
+          "applicable_category_count": {
+            "type": "integer",
+            "title": "Applicable Category Count"
           }
         },
         "type": "object",
@@ -754,7 +763,8 @@
           "name",
           "label",
           "position",
-          "category_count"
+          "category_count",
+          "applicable_category_count"
         ],
         "title": "DimensionSummary"
       },

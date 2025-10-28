@@ -22,6 +22,7 @@ class DimensionSummary(BaseModel):
     position: int
     codelist_id: Optional[str] = None
     category_count: int
+    applicable_category_count: int
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -144,17 +144,9 @@ def get_dataset(dataset_code: str, db: Session = Depends(get_db)) -> DataTableDe
     # Load only the dimensions attached to this dataset
     dimensions = (
         db.query(Dimension)
+        .options(selectinload(Dimension.categories))
         .filter(Dimension.data_table_id == datatable.id)
         .order_by(Dimension.position, Dimension.code)
-        .all()
-    )
-
-    # Count categories per dimension
-    category_counts: Dict[int, int] = dict(
-        db.query(Dimension.id, func.count(Category.id.distinct()))
-        .join(Category, Category.dimension_id == Dimension.id)
-        .filter(Dimension.data_table_id == datatable.id)
-        .group_by(Dimension.id)
         .all()
     )
 
@@ -165,7 +157,8 @@ def get_dataset(dataset_code: str, db: Session = Depends(get_db)) -> DataTableDe
             label=dimension.label,
             position=dimension.position,
             codelist_id=dimension.codelist_id,
-            category_count=category_counts.get(dimension.id, 0),
+            category_count=len(dimension.categories),
+            applicable_category_count=_count_applicable_categories(dimension),
         )
         for dimension in dimensions
     ]
@@ -234,6 +227,7 @@ def get_dimension_detail(
         position=dimension.position,
         codelist_id=dimension.codelist_id,
         category_count=len(category_payload),
+        applicable_category_count=_count_applicable_categories(dimension),
         categories=category_payload,
     )
 
@@ -282,6 +276,17 @@ def list_observations(
 
 
 TOTAL_CATEGORY_CODES = {"_T", "TOTAL", "TOT"}
+NON_APPLICABLE_CATEGORY_CODES = {"_Z", "_X", "_N", "_U"}
+
+
+def _count_applicable_categories(dimension: Dimension) -> int:
+    count = 0
+    for category in dimension.categories:
+        code = (category.code or "").upper()
+        if code in TOTAL_CATEGORY_CODES or code in NON_APPLICABLE_CATEGORY_CODES:
+            continue
+        count += 1
+    return count
 
 
 def _normalise_filter_values(
@@ -519,8 +524,6 @@ def ageing_insights(
         "FREQ": ["A10"],
     }
 
-    NON_APPLICABLE_TOTALS = {"_Z", "_X", "_N", "_U"}
-
     default_totals = _default_total_filters(datatable)
 
     def with_default_totals(
@@ -533,8 +536,10 @@ def ageing_insights(
             dim_code_upper = dim_code.upper()
             if dim_code_upper in skip_set:
                 continue
-            if isinstance(category_code, str) and category_code.upper() in NON_APPLICABLE_TOTALS:
-                continue
+            if isinstance(category_code, str):
+                code_upper = category_code.upper()
+                if code_upper in NON_APPLICABLE_CATEGORY_CODES:
+                    continue
             if dim_code not in merged:
                 if isinstance(category_code, (list, tuple, set)):
                     merged[dim_code] = [str(value) for value in category_code]  # type: ignore[assignment]
