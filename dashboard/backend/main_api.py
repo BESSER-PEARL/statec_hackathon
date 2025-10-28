@@ -392,9 +392,6 @@ def _aggregate_dimension(
             else:
                 query = query.filter(agg_cat.code.in_(list(values)))
             continue
-        # Skip filters with only "_T" value (means "all categories")
-        if len(values) == 1 and values[0] in TOTAL_CATEGORY_CODES:
-            continue
         query = _apply_dimension_filter(query, filter_dim_code, values)
 
     query = query.group_by(agg_cat.code, agg_cat.label, agg_cat.name)
@@ -522,6 +519,8 @@ def ageing_insights(
         "FREQ": ["A10"],
     }
 
+    NON_APPLICABLE_TOTALS = {"_Z", "_X", "_N", "_U"}
+
     default_totals = _default_total_filters(datatable)
 
     def with_default_totals(
@@ -531,7 +530,10 @@ def ageing_insights(
         merged: Dict[str, Sequence[str]] = dict(filters)
         skip_set = {code.upper() for code in skip}
         for dim_code, category_code in default_totals.items():
-            if dim_code in skip_set:
+            dim_code_upper = dim_code.upper()
+            if dim_code_upper in skip_set:
+                continue
+            if isinstance(category_code, str) and category_code.upper() in NON_APPLICABLE_TOTALS:
                 continue
             if dim_code not in merged:
                 if isinstance(category_code, (list, tuple, set)):
@@ -593,16 +595,30 @@ def ageing_insights(
             return age, age
         return None, None
 
-    seniors_codes: List[str] = []
+    range_senior_codes: List[Tuple[int, str]] = []
+    single_senior_codes: List[Tuple[int, str]] = []
     for code, item in age_lookup.items():
         lower, upper = parse_age_bounds(code)
         if lower is None and upper is None:
             continue
         if lower is not None and lower >= 65:
             if upper is None or upper - lower <= 5:
-                seniors_codes.append(code)
+                is_single_year = (
+                    upper is not None
+                    and lower == upper
+                    and "T" not in code
+                    and "GE" not in code
+                    and "LE" not in code
+                )
+                target = single_senior_codes if is_single_year else range_senior_codes
+                target.append((lower, code))
         elif upper is not None and upper >= 65 and lower is None:
-            seniors_codes.append(code)
+            range_senior_codes.append((upper, code))
+
+    if range_senior_codes:
+        seniors_codes: List[str] = [code for _, code in sorted(range_senior_codes)]
+    else:
+        seniors_codes = [code for _, code in sorted(single_senior_codes)]
 
     if not seniors_codes and "Y65T84" in age_lookup:
         seniors_codes.append("Y65T84")
