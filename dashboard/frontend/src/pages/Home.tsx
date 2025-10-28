@@ -600,6 +600,11 @@ const Home: React.FC = () => {
           width: "100%",
         };
 
+  // State for comboboxes
+  const [mapBreakdown, setMapBreakdown] = useState("Population by canton and municipality, legal marital status and sex");
+  const [mapMarital, setMapMarital] = useState("Total");
+  const [mapSex, setMapSex] = useState("Male");
+
   return (
     <div className="page">
       <div
@@ -616,23 +621,85 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Map section */}
-      <section style={{ margin: "32px 0" }}>
-        <h2>Luxembourg Communes Map</h2>
-        <MapComponent />
+      {/* Map and controls section */}
+      <section style={{ margin: "32px 0", display: "flex", flexDirection: "row", gap: "32px" }}>
+        {/* Left half: Map */}
+        <div style={{ flex: 1, maxWidth: "50%" }}>
+          <h2>Luxembourg Communes Map</h2>
+          <MapComponent
+            breakdown={mapBreakdown}
+            marital={mapMarital}
+            sex={mapSex}
+          />
+        </div>
+        {/* Right half: Comboboxes in card */}
+        <div style={{ flex: 1, maxWidth: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            className="map-controls-card"
+            style={{
+              background: "#fff",
+              boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
+              borderRadius: "16px",
+              padding: "32px 24px",
+              width: "100%",
+              maxWidth: "540px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "24px"
+            }}
+          >
+            <h3 style={{ marginBottom: "16px" }}>Explore population breakdown</h3>
+            {/* Combobox 1 */}
+            <div className="playground__control">
+              <label htmlFor="map-combo-1">Population breakdown</label>
+              <select
+                id="map-combo-1"
+                className="playground__select"
+                value={mapBreakdown}
+                onChange={e => setMapBreakdown(e.target.value)}
+              >
+                <option>Population by canton and municipality, legal marital status and sex</option>
+                <option>Population by canton and municipality, citizenship and sex</option>
+                <option>Population by canton and municipality, country of birth and sex</option>
+                <option>Population by canton and municipality, sex and age</option>
+              </select>
+            </div>
+            {/* Combobox 2 */}
+            <div className="playground__control">
+              <label htmlFor="map-combo-2">Marital status</label>
+              <select
+                id="map-combo-2"
+                className="playground__select"
+                value={mapMarital}
+                onChange={e => setMapMarital(e.target.value)}
+              >
+                <option>Total</option>
+                <option>Never married and never in a registered partnership</option>
+                <option>Married or in registered partnership</option>
+                <option>Widowed or registered partnership ended with the death of partner (and not re­ married or in a registered partnership)</option>
+                <option>Divorced or registered partnership legally dissolved (and not remarried or in a re­ gistered partnership)</option>
+                <option>Not stated</option>
+              </select>
+            </div>
+            {/* Combobox 3 */}
+            <div className="playground__control">
+              <label htmlFor="map-combo-3">Sex</label>
+              <select
+                id="map-combo-3"
+                className="playground__select"
+                value={mapSex}
+                onChange={e => setMapSex(e.target.value)}
+              >
+                <option>Male</option>
+                <option>Female</option>
+                <option>Total</option>
+              </select>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="metrics-grid">
-        {metrics.map((metric) => (
-          <StatCardComponent
-            key={metric.id}
-            id={metric.id}
-            title={metric.title}
-            value={metric.value}
-            subtitle={metric.subtitle}
-          />
-        ))}
-      </section>
+      {/* metrics-grid section removed as info is already shown elsewhere */}
 
       <section className="playground">
         <div className="playground__intro">
