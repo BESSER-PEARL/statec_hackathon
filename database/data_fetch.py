@@ -359,19 +359,61 @@ def store_observations(
     LOGGER.info("Prepared %d observations for persistence", obs_count)
 
 
-def main() -> None:
-    metadata = fetch_metadata()
-    observations = fetch_observations()
-    with SessionLocal() as session:
+# Add a new function to fetch data recurrently for multiple URLs
+def fetch_data_recurrently(dataflow_urls: List[str], data_urls: List[str]) -> None:
+    """Fetch data recurrently for all provided dataflow and data URLs."""
+    for dataflow_url, data_url in zip(dataflow_urls, data_urls):
+        LOGGER.info("Fetching metadata and observations for dataflow URL: %s", dataflow_url)
         try:
-            datatable, dim_lookup, cat_lookup = store_metadata(session, metadata)
-            store_observations(session, datatable, dim_lookup, cat_lookup, observations)
-            session.commit()
-            LOGGER.info("Ingestion completed successfully.")
-        except Exception:  # pragma: no cover - defensive
-            session.rollback()
-            LOGGER.exception("Failed to ingest SDMX dataset.")
-            raise
+            root = fetch_xml(dataflow_url)
+            metadata = parse_metadata(root)
+            observations = fetch_xml(data_url)
+            with SessionLocal() as session:
+                datatable, dimension_lookup, category_lookup = store_metadata(session, metadata)
+                store_observations(session, datatable, dimension_lookup, category_lookup, observations)
+                session.commit()
+            LOGGER.info("Successfully processed dataflow URL: %s", dataflow_url)
+        except Exception as e:
+            LOGGER.error("Error processing dataflow URL %s: %s", dataflow_url, e)
+
+
+def load_urls_from_file(file_path: str) -> tuple[List[str], List[str]]:
+    """Load data URLs and dataflow URLs from a text file.
+    
+    Expected format: data_url;dataflow_url (one pair per line)
+    """
+    data_urls = []
+    dataflow_urls = []
+    
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(';')
+            if len(parts) == 2:
+                data_urls.append(parts[0].strip())
+                dataflow_urls.append(parts[1].strip())
+    
+    return data_urls, dataflow_urls
+
+
+def main() -> None:
+    # Load URLs from the LustatCensus.txt file
+    urls_file = "LustatCensus.txt"
+    try:
+        data_urls, dataflow_urls = load_urls_from_file(urls_file)
+        LOGGER.info("Loaded %d URL pairs from %s", len(data_urls), urls_file)
+        fetch_data_recurrently(dataflow_urls, data_urls)
+    except FileNotFoundError:
+        LOGGER.error("File %s not found. Using default URLs.", urls_file)
+        dataflow_urls = [
+            "https://lustat.statec.lu/rest/dataflow/LU1/DSD_CENSUS_GROUP1_3@DF_B1600/1.0?references=all",
+        ]
+        data_urls = [
+            "https://lustat.statec.lu/rest/data/LU1,DSD_CENSUS_GROUP1_3@DF_B1600,1.0/..A10...................?dimensionAtObservation=AllDimensions",
+        ]
+        fetch_data_recurrently(dataflow_urls, data_urls)
 
 
 if __name__ == "__main__":

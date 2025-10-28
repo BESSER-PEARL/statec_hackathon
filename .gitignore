@@ -10,3 +10,4 @@ venv/
 __pycache__/
 node_modules/
 # local sqlite artifacts
+database/Class_Diagram.db
