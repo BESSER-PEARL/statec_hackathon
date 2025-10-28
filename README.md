@@ -1,34 +1,92 @@
-﻿# Ageing Luxembourg Hackathon Deliverable
+# Ageing Luxembourg Dashboard - STATEC Hackathon 2025
 
-This repository now hosts the datasets and interactive dashboard prepared for the 2025 STATEC Hackathon (“Ageing Luxembourg”). Key highlights:
+## What This Project Does
 
-- dashboard/ contains a Vite + React app that reads STATEC’s LUSTAT SDMX API in real time (see dashboard/README.md for running and proxy instructions).
-- scripts/ keeps optional SDMX helper utilities (sdmx_fetch_data.py, prepare_dashboard_data.py) in case an offline snapshot or data transformation is needed.
-- data/ stores the original resources supplied by STATEC (shapefiles, PDFs, etc.); the dashboard no longer depends on pre-generated CSV/JSON exports.
+This interactive dashboard explores how Luxembourg's ageing population shapes society and the economy. It visualizes demographic trends, labor market dynamics, social protection needs, and living conditions using real-time data from STATEC's LUSTAT API. The dashboard combines temporal analysis (comparing different years) with geospatial dimensions (communes, cantons, European comparisons) to uncover meaningful insights about demographic shifts.
 
-The original BESSER-PEARL template documentation is kept below for reference.
+**Key Features:**
+- Real-time data integration via SDMX API from LUSTAT (lustat.statec.lu)
+- Interactive visualizations of population structure, employment rates, pension systems, poverty indicators, and health metrics
+- Geographic analysis using Luxembourg administrative boundaries (shapefiles for communes/cantons/districts)
+- Temporal comparisons showing demographic evolution over time
+- Multi-indicator insights combining different statistical datasets
 
-# Template for BESSER-PEARL Organization Repositories
+## Why It Matters for Public Statistics
 
-This Github template provides a collection of base files and configuration recommendations for kick-starting a new project in the BESSER-PEARL organization.
+**Addressing Luxembourg's Demographic Challenge**: This project demonstrates modern approaches to statistical communication, transforming complex official data into accessible insights that support evidence-based policy making.
 
-## âš’ï¸ Using this template for your project
+**Impact Areas:**
+- **Policy Support**: Enables policymakers to understand ageing impacts on healthcare, pensions, housing, and labor markets
+- **Open Data Showcase**: Demonstrates the value of Luxembourg's open statistical infrastructure (LUSTAT, Eurostat, data.public.lu)
+- **Statistical Innovation**: Aligns with STATEC's vision to evolve into a "leading data engineering institute" capable of addressing major economic, social, and environmental challenges
+- **Public Awareness**: Makes demographic statistics accessible to citizens, researchers, and journalists
+- **Reproducible Research**: Provides transparent, open-source analytics using official statistical APIs
 
-To use this template when creating a new repository in the BESSER-PEARL GitHub organization, you have to set the `Repository template` field to `BESSER-PEARL/template`.
+This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and objective picture of society in order to inform public and private decision-making."
 
-The new repository will use this one as a template, meaning that it will contain all the files. 
-Once the new repository is created, you can edit its files to adapt them to your needs.
+## How to Run It
 
-## â˜‘ï¸ Guidelines & Contributing
+### Prerequisites
+- Node.js 16+ and npm (for dashboard)
+- Python 3.8+ (for data utilities)
 
-You will find a guided description of the steps you should follow in the [guidelines](guidelines.md) file.
+### Quick Start
 
-## ðŸ““ Publishing the documentation to ReadTheDocs
+**1. Install Dependencies**
+```bash
+# Dashboard (React + Vite)
+cd dashboard
+npm install
 
-This template also provides the base files to deploy the repository documentation using [ReadTheDocs](https://docs.readthedocs.io/en/stable/index.html). In the `docs` folder you can find and edit all the Sphinx documentation sources. You can check the documentation generated from this template at the [following link](https://besser-template.readthedocs.io/en/latest/). 
+# Optional data utilities
+pip install -r requirements.txt
+```
 
-For more information on how to connect your repository, customize, and deploy the documentation with ReadTheDocs, you can follow [this tutorial](https://docs.readthedocs.io/en/stable/tutorial/index.html). If you do not plan to use ReadTheDocs, remove the `docs` folder and the `.readthedocs.yaml` file from your repository.
+**2. Run the Dashboard**
+```bash
+cd dashboard
+npm run dev
+```
 
-## ðŸ“š References
+Access the dashboard at `http://localhost:5173`
 
-This project is an extended and adapted version (to the [BESSER-PEARL organization](https://github.com/organizations/BESSER-PEARL/)) of the [GitHub Best Practices Template](https://github.com/jlcanovas/gh-best-practices-template.git)
+**Note on CORS**: The LUSTAT SDMX API requires CORS proxy configuration. See [dashboard/README.md](dashboard/README.md) for proxy setup instructions.
+
+### Repository Structure
+```
+├── dashboard/              # Vite + React interactive dashboard (main deliverable)
+├── scripts/               # Python utilities for SDMX data fetching
+├── data/                  # STATEC resources (shapefiles, PDFs, reference data)
+├── requirements.txt       # Python dependencies
+└── README.md             # This file
+```
+
+### Data Sources
+All data accessed via official APIs:
+- **LUSTAT** (lustat.statec.lu) - STATEC's primary SDMX data portal
+- **Eurostat** (ec.europa.eu/eurostat) - European statistics for comparisons
+- **Luxembourg Open Data Portal** (data.public.lu) - Additional datasets
+- **Shapefiles** - Geographic boundaries from STATEC resources
+
+## License & Deliverables
+
+**Code License**: EUPL-1.2 (European Union Public License)
+**Data License**: CC BY 4.0 - Original data licenses maintained per source
+**Privacy**: No personal data used; only approved aggregated statistics
+
+**Hackathon Deliverables Included:**
+✅ README (this file) - Project overview and running instructions
+✅ Reproducible artifact - React dashboard with real-time API integration
+✅ Data note - See data/data_card.md for dataset documentation
+✅ 5-minute pitch deck - See presentation materials
+✅ Licensing & ethics note - EUPL-1.2 code, CC BY 4.0 data, GDPR compliant
+
+---
+
+**Developed for**: STATEC Hackathon 2025 (October 27-29, 2025)
+**Challenge**: "Ageing Luxembourg" - Developing dashboards to analyze demographic shifts
+**Team**: LIST (Luxembourg Institute of Science and Technology) - BESSER-PEARL
+**Data Provider**: STATEC - National Institute of Statistics and Economic Studies
+
+*This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
+
