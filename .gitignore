@@ -9,3 +9,5 @@ besser_venv/
 venv/
 __pycache__/
 node_modules/
+# local sqlite artifacts
+*.db
