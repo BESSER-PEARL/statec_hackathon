@@ -262,6 +262,151 @@ def explain_observation_to_json(obs_id: int, output_file: str = None) -> dict:
         
         return observation_data
 
+def fetch_all_datatables() -> str:
+    """Fetch and return all datatables with their name and description as a single string."""
+    with SessionLocal() as session:
+        datatables = session.query(DataTable).all()
+
+        if not datatables:
+            return "No datatables found!\n"
+
+        lines = []
+        lines.append("=" * 60)
+        lines.append("DATATABLES")
+        lines.append("=" * 60)
+
+        for dt in datatables:
+            lines.append(f"Name: {dt.name}")
+            lines.append(f"Description: {dt.description}")
+            lines.append("-" * 60)
+
+        return "\n".join(lines) + "\n"
+
+
+def get_datatable_id_by_name(name: str) -> int:
+    """Fetch and return the ID of a datatable based on its name."""
+    with SessionLocal() as session:
+        datatable = session.query(DataTable).filter(DataTable.name == name).first()
+
+        if not datatable:
+            raise ValueError(f"No datatable found with the name: {name}")
+
+        return datatable.id
+
+
+def get_dimensions_by_datatable_id(datatable_id: int) -> str:
+    """Fetch and return all dimensions linked to a datatable as a JSON string."""
+    with SessionLocal() as session:
+        dimensions = (
+            session.query(Dimension)
+            .filter(Dimension.data_table_id == datatable_id)
+            .all()
+        )
+
+        if not dimensions:
+            return json.dumps({"error": "No dimensions found for the given datatable ID."})
+
+        result = []
+        for dimension in dimensions:
+            result.append(
+                {
+                    "id": dimension.id,
+                    "name": dimension.name,
+                    "label": dimension.label,
+                    "code": dimension.code,
+                }
+            )
+
+        return json.dumps(result, indent=4)
+
+
+def get_dimension_ids_by_names(names: list[str]) -> list[int]:
+    """Fetch and return the IDs of dimensions based on their names."""
+    with SessionLocal() as session:
+        dimensions = (
+            session.query(Dimension)
+            .filter(Dimension.name.in_(names))
+            .all()
+        )
+
+        if not dimensions:
+            return []
+
+        return [dimension.id for dimension in dimensions]
+
+
+def get_observation_values(datatable_id: int, dimension_ids: list[int]) -> list[float]:
+    """Fetch and return all observation values for a given datatable ID and list of dimension IDs."""
+    with SessionLocal() as session:
+        observations = (
+            session.query(Observation)
+            .join(ObservationDimensionValue, Observation.id == ObservationDimensionValue.observation_id)
+            .filter(
+                Observation.data_table_id == datatable_id,
+                ObservationDimensionValue.dimension_id.in_(dimension_ids)
+            )
+            .all()
+        )
+
+        if not observations:
+            return []
+
+        return [obs.value for obs in observations]
+
+
+
+
+
+def get_observation_ids_by_dimension(datatable_id: int, dimension_id: int) -> list[int]:
+    """Fetch and return all observation IDs linked to a given dimension ID and datatable ID."""
+    with SessionLocal() as session:
+        observation_ids = (
+            session.query(ObservationDimensionValue.observation_id)
+            .join(Observation, Observation.id == ObservationDimensionValue.observation_id)
+            .filter(
+                Observation.data_table_id == datatable_id,
+                ObservationDimensionValue.dimension_id == dimension_id
+            )
+            .all()
+        )
+
+        return [obs_id[0] for obs_id in observation_ids]
+
+
+def get_values_by_observation_ids(observation_ids: list[int]) -> list[float]:
+    """Fetch and return all values for the given observation IDs."""
+    with SessionLocal() as session:
+        observations = (
+            session.query(Observation.value)
+            .filter(Observation.id.in_(observation_ids))
+            .all()
+        )
+
+        return [obs[0] for obs in observations]
+
+
+def get_categories_by_datatable_id(datatable_id: int) -> list[dict]:
+    """Fetch and return all categories linked to a datatable by its ID, excluding those with label 'not applicable'."""
+    with SessionLocal() as session:
+        categories = (
+            session.query(Category)
+            .join(Dimension, Category.dimension_id == Dimension.id)
+            .filter(Dimension.data_table_id == datatable_id)
+            .all()
+        )
+
+        result = []
+        for category in categories:
+            if category.label.lower() != "not applicable":
+                result.append({
+                    "id": category.id,
+                    "name": category.name,
+                    "label": category.label,
+                    "code": category.code
+                })
+
+        return result
+
 if __name__ == "__main__":
     # Export all observations organized by datatable
     export_observations_by_datatable()
