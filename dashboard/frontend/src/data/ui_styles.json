@@ -63,7 +63,62 @@
     },
     {
       "selectors": [
-        "#generated-charts"
+        "#hero-context"
+      ],
+      "style": {
+        "margin": "0",
+        "color": "#64748b",
+        "fontSize": "0.98rem",
+        "lineHeight": "1.6"
+      }
+    },
+    {
+      "selectors": [
+        "#headline-metrics"
+      ],
+      "style": {
+        "display": "grid",
+        "gridTemplateColumns": "repeat(auto-fit, minmax(210px, 1fr))",
+        "gap": "1.5rem",
+        "alignItems": "stretch"
+      }
+    },
+    {
+      "selectors": [
+        "#narrative-section"
+      ],
+      "style": {
+        "backgroundColor": "#ffffff",
+        "borderRadius": "22px",
+        "padding": "1.75rem",
+        "boxShadow": "0 16px 28px rgba(15, 23, 42, 0.1)",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "0.75rem"
+      }
+    },
+    {
+      "selectors": [
+        "#narrative-heading"
+      ],
+      "style": {
+        "margin": "0",
+        "fontSize": "1.5rem"
+      }
+    },
+    {
+      "selectors": [
+        "#narrative-body"
+      ],
+      "style": {
+        "margin": "0",
+        "color": "#475569",
+        "lineHeight": "1.6"
+      }
+    },
+    {
+      "selectors": [
+        "#chart-grid"
       ],
       "style": {
         "display": "grid",
@@ -75,14 +130,62 @@
     {
       "selectors": [
         "#age-buckets-chart",
-        "#senior-gender-pie"
+        "#senior-gender-pie",
+        "#senior-marital-status"
       ],
       "style": {
         "backgroundColor": "#ffffff",
         "borderRadius": "20px",
         "padding": "1.5rem",
         "boxShadow": "0 18px 32px rgba(15, 23, 42, 0.08)",
-        "minHeight": "360px"
+        "minHeight": "360px",
+        "display": "flex",
+        "flexDirection": "column"
+      }
+    },
+    {
+      "selectors": [
+        "#callout-section"
+      ],
+      "style": {
+        "backgroundColor": "#eef2ff",
+        "borderRadius": "20px",
+        "padding": "1.75rem",
+        "borderLeft": "6px solid #4f46e5",
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "0.75rem"
+      }
+    },
+    {
+      "selectors": [
+        "#callout-heading"
+      ],
+      "style": {
+        "margin": "0",
+        "fontSize": "1.4rem",
+        "fontWeight": 600
+      }
+    },
+    {
+      "selectors": [
+        "#callout-body"
+      ],
+      "style": {
+        "margin": "0",
+        "color": "#1e293b",
+        "lineHeight": "1.6"
+      }
+    },
+    {
+      "selectors": [
+        "#callout-method"
+      ],
+      "style": {
+        "margin": "0",
+        "color": "#334155",
+        "fontSize": "0.95rem",
+        "lineHeight": "1.5"
       }
     }
   ]
