@@ -27,39 +27,49 @@ This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and
 ## How to Run It
 
 ### Prerequisites
-- Node.js 16+ and npm (for dashboard)
-- Python 3.8+ (for data utilities)
+- Python 3.8+ (for database initialization and backend API)
+- Node.js 16+ and npm (for React frontend)
 
-### Quick Start
+### Setup Instructions
 
-**1. Install Dependencies**
+Follow these steps in order:
+
+**Step 1: Initialize the Database**
 ```bash
-# Dashboard (React + Vite)
-cd dashboard
-npm install
+# Run the data fetch script to populate the local database
+python database/data_fetch.py
+```
+This downloads data from LUSTAT SDMX API and creates a local database for the dashboard.
 
-# Optional data utilities
+**Step 2: Install Backend Dependencies**
+```bash
+cd dashboard/backend
 pip install -r requirements.txt
 ```
 
-**2. Run the Dashboard**
+**Step 3: Start the Backend API**
 ```bash
-cd dashboard
-npm run dev
+# From dashboard/backend directory
+python main_api.py
+```
+The backend API will run on `http://localhost:5000` (or configured port).
+
+**Step 4: Install Frontend Dependencies**
+```bash
+cd dashboard/frontend
+npm install
 ```
 
-Access the dashboard at `http://localhost:5173`
-
-**Note on CORS**: The LUSTAT SDMX API requires CORS proxy configuration. See [dashboard/README.md](dashboard/README.md) for proxy setup instructions.
-
-### Repository Structure
+**Step 5: Run the Frontend Dashboard**
+```bash
+# From dashboard/frontend directory
+npm start
 ```
-├── dashboard/              # Vite + React interactive dashboard (main deliverable)
-├── scripts/               # Python utilities for SDMX data fetching
-├── data/                  # STATEC resources (shapefiles, PDFs, reference data)
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
-```
+Access the dashboard at `http://localhost:3000`
+
+The page will reload automatically if you make edits. The React app connects to the backend API to retrieve and display the demographic data.
+
+---
 
 ### Data Sources
 All data accessed via official APIs:
