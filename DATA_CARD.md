@@ -5,27 +5,18 @@ This project curates open demographic and socio-economic indicators to analyse a
 
 ## Data Sources
 - **STATEC LUSTAT Census & Demography API** – SDMX feeds for population counts, age structure, life expectancy, and migration.
-- **STATEC LUSTAT Labour & Social Protection API** – Employment, pension, and care-service indicators.
-- **Eurostat Regional Database (NUTS2/NUTS3)** – Benchmarking Luxembourg against neighbouring regions.
-- **Luxembourg Open Data Portal** – Auxiliary geospatial boundaries, health facilities, and housing statistics.
-- **INSPIRE Administrative Units** – Harmonised geographic layers for cross-border visualisation.
+- **Shapefiles** - Geographic boundaries from STATEC resources
 
 ## Collection & Transformation
-1. Download raw SDMX datasets via authenticated API calls with explicit dataset IDs and filters.
-2. Harmonise identifiers using ISO country codes, STATEC commune codes, and NUTS classifications.
-3. Aggregate to yearly cohorts (5-year age bands) and compute derived metrics (old-age dependency ratio, median age, pension coverage).
-4. Join socio-economic indicators with geospatial features (GeoJSON/TopoJSON) for mapping.
-5. Validate schemas against control totals from official publications, logging provenance metadata (source, timestamp, parameters).
+1. Download raw SDMX datasets in JSON format via authenticated API calls with explicit dataset IDs and filters.
+2. Map to our defined database schema and store it in our own database.
+3. Display result on dashboard and perform necessary joins and other operations if requested in the dashboard.
 
 ## Refresh Schedule
-- Automated nightly pipeline for baseline indicators with manual approval for structural changes.
-- Ad-hoc refresh when new census releases or policy indicators become available.
+- Manually triggered pulls by running the backend script. 
 
 ## Known Limitations & Biases
-- Census undercounts and delayed updates can obscure recent migration dynamics.
-- Eurostat comparisons rely on harmonised definitions that may not perfectly align with national methodologies.
-- Aggregated indicators may mask intra-commune inequalities and vulnerable micro-populations.
-- Housing and care-service datasets are occasionally missing historical data prior to 2010.
+- Only used the flat data from 2021, thus not the data timeseries option. 
 
 ## Licences & Access
 - All ingested datasets are open, licensed under CC BY 4.0 (or equivalent). Licence notices are preserved in the repository.
