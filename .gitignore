@@ -1,13 +1,52 @@
-# Sphinx documentation
-docs/_build/
-database/env/
-# virtual env
-Pipfile
-Pipfile.lock
-besser_venv/
-.env
-venv/
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.python-version
+.venv/
+venv/
+ENV/
+build/
+dist/
+.coverage
+htmlcov/
+.mypy_cache/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+
+# Node / Frontend
 node_modules/
-# local sqlite artifacts
+.npm/
+.npmrc.local
+.pnp.*
+yarn-error.log
+.vscode/
+.next/
+dist/
+coverage/
+.storybook-out/
+.DS_Store
+
+# Datasets & outputs
+data/raw/
+data/tmp/
+outputs/
+*.parquet
+*.duckdb
+*.sqlite
 *.db
+*.geojson
+*.topojson
+*.csv.gz
+
+# Environment & secrets
+.env
+.env.*
+*.key
+*.pem
+.secrets/

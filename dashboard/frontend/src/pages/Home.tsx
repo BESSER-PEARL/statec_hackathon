@@ -18,7 +18,6 @@ import componentsData from "../data/ui_components.json";
 import stylesData from "../data/ui_styles.json";
 import { Renderer } from "../components/Renderer";
 import { applyStyle, StyleData } from "../utils/applyStyle";
-import { StatCardComponent } from "../components/StatCardComponent";
 import MapComponent from "../components/MapComponent";
 
 import "./Home.css";
@@ -426,64 +425,6 @@ const Home: React.FC = () => {
   const handleDimensionFilterChange = (dimensionCode: string, value: string) => {
     setDimensionFilters((prev) => ({ ...prev, [dimensionCode]: value }));
   };
-
-  const metrics = useMemo(() => {
-    if (!activeInsights) {
-      return [
-        {
-          id: "metric-population",
-          title: "Population covered",
-          value: "�",
-          subtitle: "Select a dataset with ageing insight",
-        },
-        {
-          id: "metric-senior-share",
-          title: "Share aged 65+",
-          value: "�",
-          subtitle: "People, % of population",
-        },
-        {
-          id: "metric-veryold",
-          title: "Very old (80+)",
-          value: "�",
-          subtitle: "Population share",
-        },
-        {
-          id: "metric-dependency",
-          title: "Old-age dependency",
-          value: "�",
-          subtitle: "Seniors per 100 workers",
-        },
-      ];
-    }
-
-    return [
-      {
-        id: "metric-population",
-        title: "Population covered",
-        value: formatNumber(activeInsights.population_total),
-        subtitle: `Census ${activeInsights.time_period}`,
-      },
-      {
-        id: "metric-senior-share",
-        title: "Share aged 65+",
-        value: `${formatNumber(activeInsights.share_seniors, 1)}%`,
-        subtitle: `${formatNumber(activeInsights.seniors_population)} people`,
-      },
-      {
-        id: "metric-veryold",
-        title: "Very old (80+)",
-        value: `${formatNumber(activeInsights.share_80_plus, 1)}%`,
-        subtitle: "Population share",
-      },
-      {
-        id: "metric-dependency",
-        title: "Old-age dependency",
-        value: formatNumber(activeInsights.old_age_dependency_ratio, 1),
-        subtitle: "Seniors per 100 workers",
-      },
-    ];
-  }, [activeInsights]);
 
   const highlightInsights = useMemo(() => {
     if (!activeInsights) {
