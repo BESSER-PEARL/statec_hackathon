@@ -2,7 +2,7 @@
 
 ## What This Project Does
 
-This project makes the data from LUSTAT more accessible to the people by providing a dashboard combining datasets available on LUSTAT. Instead of different pages for different pages, we have all in one dashboard. Additionally, if an OPENAI API key is provided, an additional layer of accessibility is made available by an agent that responsds to natural language queries and tries to select the best dataset and dimension for the request. 
+This project makes the data from LUSTAT more accessible to the people by providing a dashboard combining datasets available on LUSTAT. Instead of different pages for different datasets, we have all in one dashboard. Additionally, if an OPENAI API key is provided, an additional layer of accessibility is made available by an agent that responsds to natural language queries and tries to select the best dataset and dimension for the request. 
 
 
 **Key Features:**
