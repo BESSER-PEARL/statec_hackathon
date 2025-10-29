@@ -2,10 +2,11 @@
 
 ## What This Project Does
 
-This interactive dashboard explores how Luxembourg's ageing population shapes society and the economy. It visualizes demographic trends, labor market dynamics, social protection needs, and living conditions using real-time data from STATEC's LUSTAT API. The dashboard combines temporal analysis (comparing different years) with geospatial dimensions (communes, cantons, European comparisons) to uncover meaningful insights about demographic shifts.
+This project makes the data from LUSTAT more accessible to the people by providing a dashboard combining datasets available on LUSTAT. Instead of different pages for different pages, we have all in one dashboard. Additionally, if an OPENAI API key is provided, an additional layer of accessibility is made available by an agent that responsds to natural language queries and tries to select the best dataset and dimension for the request. 
+
 
 **Key Features:**
-- Real-time data integration via SDMX API from LUSTAT (lustat.statec.lu)
+- Data integration via SDMX API from LUSTAT (lustat.statec.lu) (Note that, you can add addditional datasets from LUSTAT by adding API links from LUSTAT into the file called LustatCensus.txt, you will need to make sure to add "&format=jsondata" to the end of the API as this dashboard works with json data)
 - Interactive visualizations of population structure, employment rates, pension systems, poverty indicators, and health metrics
 - Geographic analysis using Luxembourg administrative boundaries (shapefiles for communes)
 
@@ -14,11 +15,9 @@ This interactive dashboard explores how Luxembourg's ageing population shapes so
 **Addressing Luxembourg's Demographic Challenge**: This project demonstrates modern approaches to statistical communication, transforming complex official data into accessible insights that support evidence-based policy making.
 
 **Impact Areas:**
-- **Policy Support**: Enables policymakers to understand ageing impacts on healthcare, pensions, housing, and labor markets
-- **Open Data Showcase**: Demonstrates the value of Luxembourg's open statistical infrastructure (LUSTAT, Eurostat, data.public.lu)
-- **Statistical Innovation**: Aligns with STATEC's vision to evolve into a "leading data engineering institute" capable of addressing major economic, social, and environmental challenges
+- **Open Data Showcase**: Demonstrates the value of Luxembourg's open statistical infrastructure (LUSTAT)
 - **Public Awareness**: Makes demographic statistics accessible to citizens, researchers, and journalists
-- **Reproducible Research**: Provides transparent, open-source analytics using official statistical APIs
+- **Reproducible Research**: All features are usable with this repository
 
 This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and objective picture of society in order to inform public and private decision-making."
 
