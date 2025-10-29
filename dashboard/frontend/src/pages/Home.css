@@ -20,6 +20,17 @@
   box-shadow: 0 20px 45px rgba(79, 70, 229, 0.15);
 }
 
+.hero__brand {
+  display: flex;
+  align-items: center;
+}
+
+.hero__logo {
+  max-width: 600px;
+  width: 100%;
+  height: auto;
+}
+
 .hero__content {
   display: flex;
   flex-direction: column;
