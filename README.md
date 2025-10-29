@@ -72,6 +72,36 @@ The page will reload automatically if you make edits. The React app connects to 
 
 ---
 
+
+**Step 6 (Optional): Running the agent **
+
+If wished for, and if an OpenAI API key is available, you can include the conversational agent in the dashboard frontend. 
+
+Install the agent's requirements by installing the requirements listed in dashboard/backend/requirements.txt
+
+```bash
+
+pip install -r dashboard/backend/database/requirements.txt
+```
+
+Add you OpenAI API Key to the config file dashboard/backend/database/config.ini
+
+
+```
+nlp.openai.api_key = YOUR-API-KEY
+```
+
+Finally, start the agent by exeucting the agent.py file located in dashboard/backend/database/agent.py
+
+```bash
+
+python run  -r dashboard/backend/database/agent.py
+```
+
+---
+
+
+
 ### Data Sources
 All data accessed via official APIs:
 - **LUSTAT** (lustat.statec.lu) - STATEC's primary SDMX data portal
