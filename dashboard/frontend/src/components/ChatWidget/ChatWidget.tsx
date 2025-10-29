@@ -16,6 +16,10 @@ import {
   type ConnectionStatus,
   type ServerMessage
 } from '../../services/chatWebSocket';
+import {
+  ASSISTANT_DATASET_EVENT,
+  type AssistantDatasetEventDetail
+} from '../../events/assistantDataset';
 import ChatWidgetToggle from './ChatWidgetToggle';
 import './ChatWidget.css';
 
@@ -70,6 +74,139 @@ const formatServerMessage = (payload: ServerMessage): string => {
   return String(payload);
 };
 
+const datasetKeys: Array<keyof Record<string, unknown>> = ['dataset', 'dataset_code', 'dataset_name', 'name', 'code'];
+const dimensionKeys: Array<keyof Record<string, unknown>> = ['dimension_name', 'dimension', 'dimension_code'];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const getDatasetNameFromObject = (value: Record<string, unknown>): string | null => {
+  for (const key of datasetKeys) {
+    const entry = value[key];
+    if (typeof entry === 'string' && entry.trim().length > 0) {
+      return entry.trim();
+    }
+  }
+  return null;
+};
+
+const getDimensionNameFromObject = (value: Record<string, unknown>): string | null => {
+  for (const key of dimensionKeys) {
+    const entry = value[key];
+    if (typeof entry === 'string' && entry.trim().length > 0) {
+      return entry.trim();
+    }
+  }
+  return null;
+};
+
+const extractJsonCandidates = (content: string): string[] => {
+  const candidates: string[] = [];
+  const fenceRegex = /```(?:json)?\s*([\s\S]*?)```/gi;
+  let match: RegExpExecArray | null;
+  while ((match = fenceRegex.exec(content)) !== null) {
+    if (match[1]) {
+      candidates.push(match[1].trim());
+    }
+  }
+
+  const trimmed = content.trim();
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    candidates.push(trimmed);
+  }
+
+  return candidates;
+};
+
+interface AssistantSelectionDetails {
+  dataset?: string;
+  dimension?: string;
+}
+
+const extractAssistantSelection = (payload: ServerMessage): AssistantSelectionDetails => {
+  const selection: AssistantSelectionDetails = {};
+  const visited = new Set<unknown>();
+
+  const inspect = (value: unknown): void => {
+    if (value == null) {
+      return;
+    }
+
+    if (typeof value === 'string') {
+      const candidates = extractJsonCandidates(value);
+      for (const candidate of candidates) {
+        try {
+          const parsed = JSON.parse(candidate);
+          inspect(parsed);
+        } catch {
+          // Ignore JSON parse issues and continue searching
+        }
+      }
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach(inspect);
+      return;
+    }
+
+    if (isRecord(value)) {
+      if (visited.has(value)) {
+        return;
+      }
+      visited.add(value);
+
+      if (!selection.dataset) {
+        const datasetName = getDatasetNameFromObject(value);
+        if (datasetName) {
+          selection.dataset = datasetName;
+        }
+      }
+
+      if (!selection.dimension) {
+        const dimensionName = getDimensionNameFromObject(value);
+        if (dimensionName) {
+          selection.dimension = dimensionName;
+        }
+      }
+
+      if ('message' in value) {
+        inspect((value as Record<string, unknown>).message);
+      }
+
+      if ('data' in value) {
+        inspect((value as Record<string, unknown>).data);
+      }
+    }
+  };
+
+  inspect(payload);
+  return selection;
+};
+
+const dispatchAssistantDatasetSelection = (dataset: string | undefined, dimension: string | undefined, raw: unknown) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const trimmedDataset = dataset?.trim();
+  if (!trimmedDataset) {
+    return;
+  }
+
+  const detail: AssistantDatasetEventDetail = {
+    dataset: trimmedDataset,
+    dimension: dimension?.trim() || undefined,
+    raw
+  };
+
+  window.dispatchEvent(
+    new CustomEvent<AssistantDatasetEventDetail>(ASSISTANT_DATASET_EVENT, {
+      detail
+    })
+  );
+};
+
 const ChatWidget = () => {
   const [hostElement, setHostElement] = useState<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -102,6 +239,28 @@ const ChatWidget = () => {
 
     if (!content) {
       return;
+    }
+
+    const selectionDetails = extractAssistantSelection(payload);
+    if (selectionDetails.dataset) {
+      dispatchAssistantDatasetSelection(selectionDetails.dataset, selectionDetails.dimension, payload);
+    }
+
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed && typeof parsed === 'object' && 'message' in parsed) {
+        const extracted = (parsed as Record<string, unknown>).message;
+        const messageText = typeof extracted === 'string' ? extracted : formatServerMessage(extracted);
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${generateId()}`,
+          role: 'assistant',
+          content: messageText
+        };
+        setMessages((previous) => [...previous, assistantMessage]);
+        return;
+      }
+    } catch {
+      // Not JSON — fall through and use the original content
     }
 
     const assistantMessage: ChatMessage = {
