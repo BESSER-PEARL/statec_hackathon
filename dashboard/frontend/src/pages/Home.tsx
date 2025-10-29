@@ -187,10 +187,11 @@ const Home: React.FC = () => {
   const [insights, setInsights] = useState<AgeingInsights | null>(null);
   const [insightsError, setInsightsError] = useState<string | null>(null);
 
-  const [dimensionFilters, setDimensionFilters] = useState<Record<string, string>>({});
+  const [dimensionFilters, setDimensionFilters] = useState<Record<string, string[]>>({});
   const [dimensionCategories, setDimensionCategories] = useState<Record<string, DimensionCategory[]>>({});
   const [dimensionCategoriesLoading, setDimensionCategoriesLoading] = useState<Record<string, boolean>>({});
   const [dimensionCategoriesError, setDimensionCategoriesError] = useState<Record<string, string>>({});
+  const [openFilters, setOpenFilters] = useState<Record<string, boolean>>({});
 
   const [selectedDimension, setSelectedDimension] = useState<string>("");
   const [chartType, setChartType] = useState<"bar" | "pie">("bar");
@@ -497,7 +498,7 @@ const Home: React.FC = () => {
     // (e.g., the dimension being explored, or dimensions with only one category)
     return applicableDimensions.filter((dimension) => {
       if (dimension.code === selectedDimension) {
-        return false; // Don't show the dimension we're exploring
+        return false; // Skip the current widget dimension from filterable list
       }
       if (dimension.applicable_category_count <= 1) {
         return false; // No point filtering on single-category dimensions
@@ -505,6 +506,30 @@ const Home: React.FC = () => {
       return true;
     });
   }, [applicableDimensions, selectedDimension]);
+
+  const dimensionPanels = useMemo(() => {
+    if (!datasetDetail) {
+      return [];
+    }
+
+    const panels = filteredDimensions.map((dimension) => ({
+      dimension,
+      isChartDimension: false,
+    }));
+
+    const chartDimension = selectedDimension
+      ? applicableDimensions.find((dimension) => dimension.code === selectedDimension)
+      : undefined;
+
+    if (chartDimension) {
+      panels.unshift({
+        dimension: chartDimension,
+        isChartDimension: true,
+      });
+    }
+
+    return panels;
+  }, [datasetDetail, filteredDimensions, applicableDimensions, selectedDimension]);
 
   const getFilterableCategories = (dimensionCode: string) => {
     const categories = dimensionCategories[dimensionCode];
@@ -536,9 +561,9 @@ const Home: React.FC = () => {
     }
 
     setDimensionFilters((prev) => {
-      const next: Record<string, string> = {};
+      const next: Record<string, string[]> = {};
       filteredDimensions.forEach((dimension) => {
-        next[dimension.code] = prev[dimension.code] ?? "_T";
+        next[dimension.code] = prev[dimension.code] ?? [];
       });
       return next;
     });
@@ -546,6 +571,31 @@ const Home: React.FC = () => {
     setDimensionCategoriesLoading({});
     setDimensionCategoriesError({});
   }, [datasetDetail, filteredDimensions]);
+
+  useEffect(() => {
+    if (!dimensionPanels.length) {
+      setOpenFilters({});
+      return;
+    }
+
+    setOpenFilters((prev) => {
+      const next: Record<string, boolean> = {};
+      dimensionPanels.forEach(({ dimension, isChartDimension }, index) => {
+        const code = dimension.code;
+        if (isChartDimension) {
+          next[code] = false;
+          return;
+        }
+        const previousValue = prev[code];
+        if (previousValue !== undefined) {
+          next[code] = previousValue;
+        } else {
+          next[code] = index === 0 || code === selectedDimension;
+        }
+      });
+      return next;
+    });
+  }, [dimensionPanels, selectedDimension]);
 
   const activeInsights =
     insights && insights.dataset_code === selectedDataset ? insights : null;
@@ -575,19 +625,7 @@ const Home: React.FC = () => {
       }));
       setDimensionCategoriesError((prev) => ({ ...prev, [dimensionCode]: "" }));
 
-      setDimensionFilters((prev) => {
-        if (prev[dimensionCode]) {
-          return prev;
-        }
-        const totalCategory = response.data.categories.find((category) =>
-          ["_T", "TOTAL", "TOT"].includes(category.code)
-        );
-        const fallback = response.data.categories[0]?.code ?? "_T";
-        return {
-          ...prev,
-          [dimensionCode]: totalCategory?.code ?? fallback,
-        };
-      });
+      setDimensionFilters((prev) => (prev[dimensionCode] ? prev : { ...prev, [dimensionCode]: [] }));
     } catch (error) {
       console.error(error);
       setDimensionCategoriesError((prev) => ({
@@ -605,6 +643,18 @@ const Home: React.FC = () => {
     }
     fetchDimensionCategories(selectedDimension);
   }, [datasetDetail, selectedDataset, selectedDimension, fetchDimensionCategories]);
+
+  useEffect(() => {
+    Object.entries(openFilters).forEach(([dimensionCode, isOpen]) => {
+      if (
+        isOpen &&
+        !dimensionCategories[dimensionCode] &&
+        !dimensionCategoriesLoading[dimensionCode]
+      ) {
+        fetchDimensionCategories(dimensionCode);
+      }
+    });
+  }, [openFilters, dimensionCategories, dimensionCategoriesLoading, fetchDimensionCategories]);
 
   useEffect(() => {
     if (!selectedDataset || !datasetDetail || !selectedDimension) {
@@ -626,11 +676,13 @@ const Home: React.FC = () => {
           params.set("TIME_PERIOD", activeInsights.time_period);
         }
 
-        Object.entries(dimensionFilters).forEach(([dimensionCode, filterValue]) => {
-          if (!filterValue || dimensionCode === selectedDimension) {
+        Object.entries(dimensionFilters).forEach(([dimensionCode, filterValues]) => {
+          if (!filterValues || filterValues.length === 0 || dimensionCode === selectedDimension) {
             return;
           }
-          params.set(dimensionCode, filterValue);
+          filterValues.forEach((value) => {
+            params.append(dimensionCode, value);
+          });
         });
 
         const response = await axios.get<AggregateResponse>(
@@ -654,8 +706,41 @@ const Home: React.FC = () => {
     fetchAggregates();
   }, [activeInsights?.time_period, datasetDetail, dimensionFilters, selectedDataset, selectedDimension]);
 
-  const handleDimensionFilterChange = (dimensionCode: string, value: string) => {
-    setDimensionFilters((prev) => ({ ...prev, [dimensionCode]: value }));
+  const handleDimensionFilterSelectAll = (dimensionCode: string) => {
+    setDimensionFilters((prev) => ({ ...prev, [dimensionCode]: [] }));
+  };
+
+  const handleDimensionFilterToggle = (
+    dimensionCode: string,
+    categoryCode: string,
+    checked: boolean
+  ) => {
+    const normalizedCode = categoryCode.toUpperCase();
+    if (["_T", "TOTAL", "TOT"].includes(normalizedCode)) {
+      handleDimensionFilterSelectAll(dimensionCode);
+      return;
+    }
+
+    setDimensionFilters((prev) => {
+      const current = prev[dimensionCode] ?? [];
+      const cleaned = current.filter(
+        (value) => !["_T", "TOTAL", "TOT"].includes(value.toUpperCase())
+      );
+      let nextValues: string[];
+      if (checked) {
+        nextValues = Array.from(new Set([...cleaned, categoryCode]));
+      } else {
+        nextValues = cleaned.filter((value) => value !== categoryCode);
+      }
+      return { ...prev, [dimensionCode]: nextValues };
+    });
+  };
+
+  const toggleFilterPanel = (dimensionCode: string) => {
+    setOpenFilters((prev) => {
+      const isOpen = prev[dimensionCode] ?? false;
+      return { ...prev, [dimensionCode]: !isOpen };
+    });
   };
 
   const highlightInsights = useMemo(() => {
@@ -1184,13 +1269,24 @@ const Home: React.FC = () => {
       );
     }
 
-    try {
-      setObsLoading(true);
-      setObsError(null);
-      const response = await axios.get<ObservationPoint[]>(
-        `${API_BASE}/datasets/${selectedDataset}/observations`,
-        { params: { limit: OBSERVATION_LIMIT } }
-      );
+      try {
+        setObsLoading(true);
+        setObsError(null);
+        const params = new URLSearchParams();
+        params.set("limit", String(OBSERVATION_LIMIT));
+        Object.entries(dimensionFilters).forEach(([dimensionCode, filterValues]) => {
+          if (!filterValues || filterValues.length === 0) {
+            return;
+          }
+          filterValues.forEach((value) => {
+            params.append(dimensionCode, value);
+          });
+        });
+
+        const response = await axios.get<ObservationPoint[]>(
+          `${API_BASE}/datasets/${selectedDataset}/observations`,
+          { params }
+        );
       setObservations(response.data);
     } catch (error) {
       console.error(error);
@@ -1207,11 +1303,12 @@ const Home: React.FC = () => {
     }
 
     return observations.filter((observation) => {
-      return Object.entries(dimensionFilters).every(([dimensionCode, selectedValue]) => {
-        if (!selectedValue || selectedValue === "_T") {
+      return Object.entries(dimensionFilters).every(([dimensionCode, selectedValues]) => {
+        if (!selectedValues || selectedValues.length === 0) {
           return true;
         }
-        return observation.dimensions?.[dimensionCode] === selectedValue;
+        const dimensionValue = observation.dimensions?.[dimensionCode];
+        return selectedValues.includes(dimensionValue ?? "");
       });
     });
   }, [observations, dimensionFilters]);
@@ -1610,31 +1707,6 @@ const Home: React.FC = () => {
           </div>
 
           <div className="playground__control">
-            <label htmlFor="dimension-select">Dimension to explore</label>
-            <select
-              id="dimension-select"
-              value={selectedDimension}
-              onChange={(event) => {
-                setSelectedDimension(event.target.value);
-                setAssistantSelection(null);
-                setPendingAssistantSelection(null);
-                setPendingDimension(null);
-              }}
-              disabled={dimensionOptions.length === 0}
-            >
-              {dimensionOptions.length === 0 ? (
-                <option value="">No dimensions available</option>
-              ) : (
-                dimensionOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div className="playground__control">
             <label htmlFor="chart-type-select">Widget</label>
             <select
               id="chart-type-select"
@@ -1665,40 +1737,118 @@ const Home: React.FC = () => {
           </div>
         </div>
 
-        {filteredDimensions.length > 0 && (
+                {dimensionPanels.length > 0 && (
           <div className="playground__filters">
-            {filteredDimensions.map((dimension) => {
+            {dimensionPanels.map(({ dimension, isChartDimension }) => {
               const allCategories = dimensionCategories[dimension.code] || [];
               const categories = getFilterableCategories(dimension.code);
-              const selectedValue = dimensionFilters[dimension.code] ?? "_T";
-              
-              // Skip if no filterable categories
-              if (categories.length === 0 && allCategories.length > 0) {
+              const categoryOptions = categories.filter(
+                (category) => !["_T", "TOTAL", "TOT"].includes(category.code.toUpperCase())
+              );
+              const selectedValues = dimensionFilters[dimension.code] ?? [];
+              const allSelected = selectedValues.length === 0;
+              const selectedLabels = categoryOptions.filter((category) =>
+                selectedValues.includes(category.code)
+              );
+              const summaryBase = allSelected
+                ? "All categories"
+                : selectedLabels.length === 0
+                ? `${selectedValues.length} selected`
+                : selectedLabels
+                    .slice(0, 2)
+                    .map((category) => category.label || category.name || category.code)
+                    .join(", ") + (selectedLabels.length > 2 ? ` +${selectedLabels.length - 2}` : "");
+
+              if (isChartDimension) {
+                const summaryText = `${summaryBase} (widget dimension)`;
+                return (
+                  <div className="playground__filter playground__filter--static" key={dimension.code}>
+                    <div className="playground__filter-toggle playground__filter-toggle--static">
+                      <span>{dimension.label || dimension.code}</span>
+                      <span className="playground__filter-summary">{summaryText}</span>
+                    </div>
+                    <div className="playground__filter-note">
+                      Choose "Use in widget" from another dimension to change the chart axis.
+                    </div>
+                  </div>
+                );
+              }
+
+              if (categoryOptions.length === 0 && allCategories.length > 0) {
                 return null;
               }
-              
+
+              const isOpen = openFilters[dimension.code] ?? false;
+
               return (
-                <div className="playground__filter" key={dimension.code}>
-                  <label htmlFor={`filter-${dimension.code}`}>
-                    {dimension.label || dimension.code}
-                  </label>
-                  <select
-                    id={`filter-${dimension.code}`}
-                    value={selectedValue}
-                    onFocus={() => fetchDimensionCategories(dimension.code)}
-                    onChange={(event) =>
-                      handleDimensionFilterChange(dimension.code, event.target.value)
-                    }
+                <div
+                  className={`playground__filter${isOpen ? " playground__filter--open" : ""}`}
+                  key={dimension.code}
+                >
+                  <button
+                    type="button"
+                    className="playground__filter-toggle"
+                    onClick={() => toggleFilterPanel(dimension.code)}
+                    aria-expanded={isOpen}
                   >
-                    <option value="_T">All categories</option>
-                    {categories.map((category) => (
-                      <option key={category.code} value={category.code}>
-                        {category.label || category.name || category.code}
-                      </option>
-                    ))}
-                  </select>
+                    <span>{dimension.label || dimension.code}</span>
+                    <span className="playground__filter-summary">{summaryBase}</span>
+                    <span
+                      className={`playground__filter-chevron${isOpen ? " is-open" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="playground__filter-panel">
+                      <div className="playground__filter-actions">
+                        <label className="playground__checkbox">
+                          <input
+                            type="checkbox"
+                            checked={allSelected}
+                            onChange={() => handleDimensionFilterSelectAll(dimension.code)}
+                          />
+                          <span>All categories</span>
+                        </label>
+                        {!allSelected && (
+                          <button
+                            type="button"
+                            className="playground__clear"
+                            onClick={() => handleDimensionFilterSelectAll(dimension.code)}
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="playground__set-widget"
+                          onClick={() => setSelectedDimension(dimension.code)}
+                          disabled={dimension.code === selectedDimension}
+                        >
+                          {dimension.code === selectedDimension ? "Used in widget" : "Use in widget"}
+                        </button>
+                      </div>
+                      <div className="playground__filter-options">
+                        {categoryOptions.map((category) => (
+                          <label key={category.code} className="playground__checkbox">
+                            <input
+                              type="checkbox"
+                              checked={!allSelected && selectedValues.includes(category.code)}
+                              onChange={(event) =>
+                                handleDimensionFilterToggle(
+                                  dimension.code,
+                                  category.code,
+                                  event.target.checked
+                                )
+                              }
+                            />
+                            <span>{category.label || category.name || category.code}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {dimensionCategoriesLoading[dimension.code] && (
-                    <span className="playground__hint">Loading…</span>
+                    <span className="playground__hint">Loading...</span>
                   )}
                   {dimensionCategoriesError[dimension.code] && (
                     <span className="playground__hint playground__hint--error">
@@ -1856,5 +2006,14 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+
+
+
+
+
+
+
+
 
 
