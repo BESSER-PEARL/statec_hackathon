@@ -1,5 +1,13 @@
 import json
 import os
+import sys
+from pathlib import Path
+
+CURRENT_DIR = Path(__file__).resolve()
+PROJECT_ROOT = CURRENT_DIR.parents[3]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from dashboard.backend.sql_alchemy import (
     SessionLocal,
     Observation,

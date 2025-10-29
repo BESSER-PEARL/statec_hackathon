@@ -25,7 +25,7 @@ This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and
 ## How to Run It
 
 ### Prerequisites
-- Python 3.8+ (for database initialization and backend API)
+- Python 3.11 (for database initialization and backend API)
 - Node.js 16+ and npm (for React frontend)
 
 ### Setup Instructions
@@ -87,30 +87,9 @@ python run  -r dashboard/backend/database/agent.py
 
 ---
 
-### Data Sources
-All data accessed via official APIs:
-- **LUSTAT** (lustat.statec.lu) - STATEC's primary SDMX data portal
-- **Shapefiles** - Geographic boundaries from STATEC resources
-
-## License & Deliverables
-
-- **Code License**: EUPL-1.2 (European Union Public License)
-- **Data License**: CC BY 4.0 - Original data licenses maintained per source
-- **Privacy**: No personal data used; only approved aggregated statistics
-
-**Hackathon Deliverables Included:**
-✅ README (this file) - Project overview and running instructions
-✅ Reproducible artifact - React dashboard with real-time API integration
-✅ Data note - See data/data_card.md for dataset documentation
-✅ 5-minute pitch deck - See presentation materials
-✅ Licensing & ethics note - EUPL-1.2 code, CC BY 4.0 data, GDPR compliant
-
----
-
 - **Developed for**: STATEC Hackathon 2025 (October 27-29, 2025)
 - **Challenge**: "Ageing Luxembourg" - Developing dashboards to analyze demographic shifts
 - **Team**: LIST (Luxembourg Institute of Science and Technology) - BESSER-PEARL
 - **Data Provider**: STATEC - National Institute of Statistics and Economic Studies
 
 *This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
-

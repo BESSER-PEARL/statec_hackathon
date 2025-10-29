@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import List, Optional
 
 from sqlalchemy import (
@@ -139,7 +140,8 @@ class ObservationDimensionValue(Base):
     category: Mapped["Category"] = relationship(back_populates="observation_values")
 
 
-DATABASE_URL = "sqlite:///Class_Diagram.db"
+DATABASE_PATH = Path(__file__).resolve().parent / "Class_Diagram.db"
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 engine = create_engine(DATABASE_URL, echo=False, future=True)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
