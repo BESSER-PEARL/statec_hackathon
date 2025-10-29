@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse
 
@@ -445,9 +446,10 @@ def fetch_data_recurrently(dataset_urls: Sequence[str]) -> None:
 
 
 def main() -> None:
-    urls_file = "/database/LustatCensus.txt"
+    script_dir = Path(__file__).resolve().parent
+    urls_file = script_dir / "database" / "LustatCensus.txt"
     try:
-        dataset_urls = load_urls_from_file(urls_file)
+        dataset_urls = load_urls_from_file(str(urls_file))
         LOGGER.info("Loaded %d dataset URLs from %s", len(dataset_urls), urls_file)
     except FileNotFoundError:
         LOGGER.error("Dataset URL file %s not found.", urls_file)
