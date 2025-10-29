@@ -7,9 +7,7 @@ This interactive dashboard explores how Luxembourg's ageing population shapes so
 **Key Features:**
 - Real-time data integration via SDMX API from LUSTAT (lustat.statec.lu)
 - Interactive visualizations of population structure, employment rates, pension systems, poverty indicators, and health metrics
-- Geographic analysis using Luxembourg administrative boundaries (shapefiles for communes/cantons/districts)
-- Temporal comparisons showing demographic evolution over time
-- Multi-indicator insights combining different statistical datasets
+- Geographic analysis using Luxembourg administrative boundaries (shapefiles for communes)
 
 ## Why It Matters for Public Statistics
 
@@ -34,34 +32,22 @@ This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and
 
 Follow these steps in order:
 
-**Step 1: Initialize the Database**
+**Step 1: Initialize Backend**
 ```bash
 # Run the data fetch script to populate the local database
-cd database
-python data_fetch.py
+python script_backend.py
 ```
-This downloads data from LUSTAT SDMX API and creates a local database for the dashboard. Note that it might take a while to fetch the data.
+This downloads data from LUSTAT SDMX API and creates a local database for the dashboard. Note that it might take a while to fetch the data. It will then initialize the database, install backend dependencies and start the backend API
 
-**Step 2: Install Backend Dependencies**
-```bash
-cd ../dashboard/backend
-pip install -r requirements.txt
-```
-
-**Step 3: Start the Backend API**
-```bash
-# From dashboard/backend directory
-python main_api.py
-```
 The backend API will run on `http://localhost:5000` (or configured port).
 
-**Step 4: Install Frontend Dependencies**
+**Step 2: Install Frontend Dependencies**
 ```bash
-cd ../frontend
+cd dashboard/frontend
 npm install
 ```
 
-**Step 5: Run the Frontend Dashboard**
+**Step 3: Run the Frontend Dashboard**
 ```bash
 # From dashboard/frontend directory
 npm start
@@ -70,17 +56,17 @@ Access the dashboard at `http://localhost:3000`
 
 The page will reload automatically if you make edits. The React app connects to the backend API to retrieve and display the demographic data.
 
+
 ---
 
 
-**Step 6 (Optional): Running the agent**
+**Step 3 (Optional): Running the agent**
 
 If wished for, and if an OpenAI API key is available, you can include the conversational agent in the dashboard frontend. 
 
 Install the agent's requirements by installing the requirements listed in dashboard/backend/requirements.txt
 
 ```bash
-
 pip install -r dashboard/backend/database/requirements.txt
 ```
 
@@ -94,13 +80,10 @@ nlp.openai.api_key = YOUR-API-KEY
 Finally, start the agent by exeucting the agent.py file located in dashboard/backend/database/agent.py
 
 ```bash
-
 python run  -r dashboard/backend/database/agent.py
 ```
 
 ---
-
-
 
 ### Data Sources
 All data accessed via official APIs:
