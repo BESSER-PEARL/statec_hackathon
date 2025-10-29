@@ -81,7 +81,7 @@ nlp.openai.api_key = YOUR-API-KEY
 Finally, start the agent by exeucting the agent.py file located in dashboard/backend/database/agent.py
 
 ```bash
-python run dashboard/backend/database/agent.py
+python dashboard/backend/database/agent.py
 ```
 
 ---
