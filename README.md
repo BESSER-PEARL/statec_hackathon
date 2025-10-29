@@ -60,7 +60,7 @@ The page will reload automatically if you make edits. The React app connects to 
 ---
 
 
-**Step 6 (Optional): Running the agent**
+**Step 3 (Optional): Running the agent**
 
 If wished for, and if an OpenAI API key is available, you can include the conversational agent in the dashboard frontend. 
 
