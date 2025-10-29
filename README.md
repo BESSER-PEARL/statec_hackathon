@@ -38,7 +38,7 @@ python script_backend.py
 ```
 This downloads data from LUSTAT SDMX API and creates a local database for the dashboard. Note that it might take a while to fetch the data. It will then initialize the database, install backend dependencies and start the backend API
 
-The backend API will run on `http://localhost:5000` (or configured port).
+The backend API will run on `http://localhost:8000` (or configured port).
 
 **_The data fetched during backend initialization uses the LUSTAT SDMX API. The full list of endpoints currently used can be found in [`dashboard/backend/database/LustatCensus.txt`](dashboard/backend/database/LustatCensus.txt). Our database is designed to be compatible with any LUSTAT data table, so you can easily add new data tables in [`LustatCensus.txt`](dashboard/backend/database/LustatCensus.txt) by following the API call format for JSON info. Then you can inizialize the backend again to get the new data._**
 
