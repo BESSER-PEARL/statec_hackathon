@@ -83,19 +83,6 @@ Finally, start the agent by exeucting the agent.py file located in dashboard/bac
 python run  -r dashboard/backend/database/agent.py
 ```
 
-## License & Deliverables
-
-- **Code License**: EUPL-1.2 (European Union Public License)
-- **Data License**: CC BY 4.0 - Original data licenses maintained per source
-- **Privacy**: No personal data used; only approved aggregated statistics
-
-**Hackathon Deliverables Included:**
-✅ README (this file) - Project overview and running instructions
-✅ Reproducible artifact - React dashboard with real-time API integration
-✅ Data note - See data/data_card.md for dataset documentation
-✅ 5-minute pitch deck - See presentation materials
-✅ Licensing & ethics note - EUPL-1.2 code, CC BY 4.0 data, GDPR compliant
-
 ---
 
 - **Developed for**: STATEC Hackathon 2025 (October 27-29, 2025)
@@ -104,4 +91,3 @@ python run  -r dashboard/backend/database/agent.py
 - **Data Provider**: STATEC - National Institute of Statistics and Economic Studies
 
 *This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
-
