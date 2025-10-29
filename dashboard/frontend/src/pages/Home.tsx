@@ -770,35 +770,35 @@ const Home: React.FC = () => {
       return [
         {
           id: "action-load",
-          title: "Load ageing evidence",
+          title: "Activate the ageing evidence",
           summary:
-            "Select a dataset with ageing insights to surface personalised hackathon recommendations.",
+            "Select a demographic dataset to unlock the tailored recommendations showcased below.",
           actions: [
-            "Start with the census age pyramid dataset to explore the baseline.",
-            "Use the filters to compare communes, sexes or age brackets.",
-            "Pin insights that resonate with demographic, economic and wellbeing angles.",
+            "Start with the census ageing dataset to anchor Luxembourg-wide baselines.",
+            "Use the dimension filters to compare communes, sexes and age brackets.",
+            "Watch the storyline and policy tiles refresh with evidence-based talking points.",
           ],
         },
         {
           id: "action-theme",
-          title: "Shape the narrative",
+          title: "Frame the experience",
           summary:
-            "Align the hero copy, highlights and storytelling cards with the Ageing Luxembourg pillars.",
+            "Introduce Ageing Luxembourg as a shared agenda for policymakers, service providers and communities.",
           actions: [
-            "Explain demographic change, economic impact, health capacity and social inclusion.",
-            "List additional datasets (life expectancy, employment 55+, care beds) you intend to blend.",
-            "Sketch the user journey from overview to actionable insight builder.",
+            "Describe how the dashboard links demographic, economic, health and social insights.",
+            "Mention complementary datasets (life expectancy, employment 55+, care beds) that can plug in next.",
+            "Outline the journey from headline indicators to custom analyses in the playground.",
           ],
         },
         {
           id: "action-demo",
-          title: "Prepare the live demo",
+          title: "Get ready to showcase",
           summary:
-            "Plan how you will navigate the dashboard during judging to highlight the most compelling visuals.",
+            "Rehearse the navigation so a live demo flows smoothly for juries and decision-makers.",
           actions: [
-            "Practice switching filters quickly to answer jury questions.",
-            "Capture screenshots for a backup slide deck.",
-            "Note API endpoints that enable future extensions (dependency, employment, health).",
+            "Practise switching filters to answer questions in real time.",
+            "Capture backup screenshots in case you need a static deck.",
+            "Highlight the open APIs that allow future extensions across policy domains.",
           ],
         },
       ];
@@ -813,32 +813,32 @@ const Home: React.FC = () => {
     return [
       {
         id: "action-territories",
-        title: "Target priority territories",
-        summary: `Use ${datasetLabel} with the ${dimensionLabel} lens to surface communes where seniors concentrate.`,
+        title: "Prioritise ageing communes",
+        summary: `Use ${datasetLabel} with the ${dimensionLabel} lens to see which communes exceed ${shareSeniors}% seniors (${seniorsPopulation} people).`,
         actions: [
-          `Filter the insight builder to highlight communes above ${shareSeniors}% seniors (${seniorsPopulation} people).`,
-          "Capture the map view and annotate high-pressure cantons for your pitch deck.",
-          "Layer poverty or healthcare datasets from LUSTAT to build integrated interventions.",
+          "Flag these communes for age-friendly housing, transport and social care investments.",
+          "Use the thematic map to illustrate regional contrasts and rally multi-level partnerships.",
+          "Pair the demographic lens with poverty or healthcare datasets from LUSTAT to design integrated responses.",
         ],
       },
       {
         id: "action-economy",
-        title: "Frame the economic storyline",
-        summary: `Link the ${dependency} dependency ratio with employment indicators to discuss inclusive growth.`,
+        title: "Secure inclusive growth",
+        summary: `Link the ${dependency} dependency ratio with employment indicators to show how the economy can stay resilient.`,
         actions: [
-          "Combine Eurostat labour market data (55–64 employment) with census structure in a dual-axis chart.",
-          "Quantify productivity gains from extending working lives or targeted migration.",
-          "Use storytelling cards to explain how each scenario reduces dependency pressure.",
+          "Compare the dependency ratio with employment of residents aged 55-64 to evidence labour market opportunities.",
+          "Quantify the gains from extending working lives, targeted migration or upskilling programmes.",
+          "Show how each scenario keeps revenues strong while financing social protection.",
         ],
       },
       {
         id: "action-care",
-        title: "Build a healthy longevity narrative",
-        summary: `${shareVeryOld}% of residents are already 80+. Align care capacity and age-friendly services.`,
+        title: "Design longevity-ready services",
+        summary: `${shareVeryOld}% of residents are already 80+. Align care capacity and age-friendly services with that reality.`,
         actions: [
-          "Blend healthy life years or care beds datasets to evidence health infrastructure gaps.",
-          `Show trend text in the storytelling panel referencing census ${censusYear} to keep the narrative current.`,
-          "Design a KPI card for healthy ageing outcomes and link to recommended policy pilots.",
+          "Blend healthy life years or care beds datasets to benchmark where supply is tight.",
+          `Reference census ${censusYear} trends to prove the urgency for new housing, prevention and care pilots.`,
+          "Propose KPIs for healthy ageing that track progress once policies roll out.",
         ],
       },
     ];
@@ -931,27 +931,27 @@ const Home: React.FC = () => {
       [
         {
           id: "story-demography",
-          title: "Demography",
+          title: "Demographic pulse",
           body:
-            "Compare population pyramids and year-on-year growth to see how Luxembourg's communes are ageing at different speeds.",
+            "Population pyramids reveal communes ageing at different speeds. Highlight where age-friendly transport, housing and services must expand first.",
         },
         {
           id: "story-economy",
-          title: "Economy & labour",
+          title: "Economic resilience",
           body:
-            "Cross dependency ratios with 55–64 employment data to monitor how well older workers remain active in the labour market.",
+            "Track how dependency ratios interact with employment of older workers to keep Luxembourg's growth engine inclusive and competitive.",
         },
         {
           id: "story-health",
-          title: "Health & care",
+          title: "Healthy longevity",
           body:
-            "Follow longevity and healthy life years indicators to align healthcare capacity and long-term care beds with local needs.",
+            "Pair longevity indicators with healthy life years and care capacity to plan clinics, home care and prevention programmes that match demand.",
         },
         {
           id: "story-social",
           title: "Social cohesion",
           body:
-            "Overlay poverty-at-risk and social participation metrics to surface communities needing additional support.",
+            "Layer poverty, civic participation and cultural data to spot communities that need support to stay vibrant for every generation.",
         },
       ],
     []
@@ -1294,7 +1294,10 @@ const Home: React.FC = () => {
       </section>
 
       <section className="story-grid">
-        <h2>Storylines for policy teams</h2>
+        <h2>Strategic storylines</h2>
+        <p className="story-grid__intro">
+          Use these narratives to brief policymakers, partners and communities on what the evidence reveals.
+        </p>
         <div className="story-grid__cards">
           {storyCards.map((card) => (
             <article key={card.id} className="story-card">
@@ -1307,10 +1310,10 @@ const Home: React.FC = () => {
 
       <section className="action-board">
         <div className="action-board__header">
-          <h2>Hackathon action board</h2>
+          <h2>Policy playbook</h2>
           <p>
-            Translate insights into winning moves. These playbook cards help you turn data stories into a compelling
-            Ageing Luxembourg pitch.
+            Translate the indicators into concrete moves for Luxembourg&apos;s ageing agenda. Each card pairs the data with an
+            outcome citizens and decision-makers can rally around.
           </p>
         </div>
         <div className="action-board__grid">
@@ -1601,3 +1604,5 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
+

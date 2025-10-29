@@ -253,6 +253,12 @@
   margin: 0;
 }
 
+.story-grid__intro {
+  margin: 0;
+  color: #475569;
+  max-width: 48ch;
+}
+
 .story-grid__cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
