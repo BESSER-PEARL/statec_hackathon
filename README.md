@@ -79,9 +79,9 @@ All data accessed via official APIs:
 
 ## License & Deliverables
 
-**Code License**: EUPL-1.2 (European Union Public License)
-**Data License**: CC BY 4.0 - Original data licenses maintained per source
-**Privacy**: No personal data used; only approved aggregated statistics
+- **Code License**: EUPL-1.2 (European Union Public License)
+- **Data License**: CC BY 4.0 - Original data licenses maintained per source
+- **Privacy**: No personal data used; only approved aggregated statistics
 
 **Hackathon Deliverables Included:**
 ✅ README (this file) - Project overview and running instructions
