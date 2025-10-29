@@ -785,3 +785,41 @@
     min-width: 140px;
   }
 }
+
+.map-section__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.map-section__control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 180px;
+}
+
+.map-section__control label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.map-section__control select {
+  border: 1px solid #cbd5f5;
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+  background: #ffffff;
+  font-size: 0.95rem;
+  color: #1e293b;
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.map-section__control select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 12px 24px rgba(79, 70, 229, 0.18);
+}
+
