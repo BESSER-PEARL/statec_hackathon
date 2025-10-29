@@ -41,6 +41,8 @@ This downloads data from LUSTAT SDMX API and creates a local database for the da
 
 The backend API will run on `http://localhost:5000` (or configured port).
 
+**_The data fetched during backend initialization uses the LUSTAT SDMX API. The full list of endpoints currently used can be found in [`dashboard/backend/database/LustatCensus.txt`](dashboard/backend/database/LustatCensus.txt). Our database is designed to be compatible with any LUSTAT data table, so you can easily add new data tables in [`LustatCensus.txt`](dashboard/backend/database/LustatCensus.txt) by following the API call format for JSON info. Then you can inizialize the backend again to get the new data._**
+
 **Step 2: Install Frontend Dependencies**
 ```bash
 cd dashboard/frontend
