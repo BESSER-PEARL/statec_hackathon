@@ -1,8 +1,5 @@
 # Data Card – Ageing Insights Dashboard
 
-## Summary
-This project curates open demographic and socio-economic indicators to analyse ageing in Luxembourg. Indicators include age pyramids, dependency ratios, labour market participation, social protection expenditure, long-term care utilisation, health status, and housing affordability. Data are aggregated by commune/canton, gender, and age cohort.
-
 ## Data Sources
 - **STATEC LUSTAT Census & Demography API** – SDMX feeds for population counts, age structure, life expectancy, and migration.
 - **Shapefiles** - Geographic boundaries from STATEC resources
