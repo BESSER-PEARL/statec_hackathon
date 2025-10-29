@@ -82,7 +82,7 @@ nlp.openai.api_key = YOUR-API-KEY
 Finally, start the agent by exeucting the agent.py file located in dashboard/backend/database/agent.py
 
 ```bash
-python run  -r dashboard/backend/database/agent.py
+python run dashboard/backend/database/agent.py
 ```
 
 ---
@@ -92,4 +92,11 @@ python run  -r dashboard/backend/database/agent.py
 - **Team**: LIST (Luxembourg Institute of Science and Technology) - BESSER-PEARL
 - **Data Provider**: STATEC - National Institute of Statistics and Economic Studies
 
-*This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
+
+
+## Data note
+
+You can access the detailed [data card here](DATA_CARD.md).
+
+## Licenses
+This project is licensed under the [`MIT license`](LICENSE.md).
