@@ -487,51 +487,51 @@ const Home: React.FC = () => {
     ];
   }, [activeInsights]);
 
-  const heroStats = useMemo(
-    () =>
-      activeInsights
-        ? [
-            {
-              id: "hero-seniors",
-              label: "Population 65+",
-              value: formatNumber(activeInsights.seniors_population),
-              context: `${formatNumber(activeInsights.share_seniors, 1)}% of residents`,
-            },
-            {
-              id: "hero-veryold",
-              label: "Share aged 80+",
-              value: `${formatNumber(activeInsights.share_80_plus, 1)}%`,
-              context: "Growing longevity cohort",
-            },
-            {
-              id: "hero-dependency",
-              label: "Old-age dependency",
-              value: formatNumber(activeInsights.old_age_dependency_ratio, 1),
-              context: "Seniors per 100 workers",
-            },
-          ]
-        : [
-            {
-              id: "hero-seniors",
-              label: "Population 65+",
-              value: "—",
-              context: "Select a dataset to view ageing insights",
-            },
-            {
-              id: "hero-veryold",
-              label: "Share aged 80+",
-              value: "—",
-              context: "Longevity signals appear here",
-            },
-            {
-              id: "hero-dependency",
-              label: "Old-age dependency",
-              value: "—",
-              context: "Compare pressure on workers",
-            },
-        ],
-    [activeInsights]
-  );
+  const heroStats = useMemo(() => {
+    if (!activeInsights) {
+      return [
+        {
+          id: "hero-seniors",
+          label: "Population 65+",
+          value: "--",
+          context: "Select a dataset to view ageing insights",
+        },
+        {
+          id: "hero-veryold",
+          label: "Share aged 80+",
+          value: "--",
+          context: "Longevity signals appear here",
+        },
+        {
+          id: "hero-dependency",
+          label: "Old-age dependency",
+          value: "--",
+          context: "Compare pressure on workers",
+        },
+      ];
+    }
+
+    return [
+      {
+        id: "hero-seniors",
+        label: "Population 65+",
+        value: formatNumber(activeInsights.seniors_population),
+        context: `${formatNumber(activeInsights.share_seniors, 1)}% of residents`,
+      },
+      {
+        id: "hero-veryold",
+        label: "Share aged 80+",
+        value: `${formatNumber(activeInsights.share_80_plus, 1)}%`,
+        context: "Growing longevity cohort",
+      },
+      {
+        id: "hero-dependency",
+        label: "Old-age dependency",
+        value: formatNumber(activeInsights.old_age_dependency_ratio, 1),
+        context: "Seniors per 100 workers",
+      },
+    ];
+  }, [activeInsights]);
 
   const metrics = useMemo(
     () => {
@@ -601,85 +601,81 @@ const Home: React.FC = () => {
     [activeInsights]
   );
 
-  const populationBalance = useMemo(
-    () => {
-      if (!activeInsights) {
-        return [
-          {
-            id: "children",
-            label: "Children 0-14",
-            share: 0,
-            shareLabel: "—",
-            color: "#0EA5E9",
-            absoluteLabel: "— residents",
-            description:
-              "Select a dataset to reveal the youth base supporting Luxembourg's future workforce.",
-          },
-          {
-            id: "working",
-            label: "Working age 15-64",
-            share: 0,
-            shareLabel: "—",
-            color: "#4F46E5",
-            absoluteLabel: "— residents",
-            description:
-              "Active population insights appear once a dataset with ageing summary is selected.",
-          },
-          {
-            id: "seniors",
-            label: "Seniors 65+",
-            share: 0,
-            shareLabel: "—",
-            color: "#F97316",
-            absoluteLabel: "— residents",
-            description:
-              "Reveal longevity dynamics by loading a dataset enriched with ageing signals.",
-          },
-        ];
-      }
-
-      const shareChildren = clampShare(safeNumber(activeInsights.share_children));
-      const shareSeniors = clampShare(safeNumber(activeInsights.share_seniors));
-      const totalPopulation = safeNumber(activeInsights.population_total);
-      const workingPopulation = safeNumber(activeInsights.working_age_population);
-      const workingShare = totalPopulation
-        ? clampShare((workingPopulation / totalPopulation) * 100)
-        : clampShare(100 - shareChildren - shareSeniors);
-      const shareVeryOld = clampShare(safeNumber(activeInsights.share_80_plus));
-
+  const populationBalance = useMemo(() => {
+    if (!activeInsights) {
       return [
         {
           id: "children",
           label: "Children 0-14",
-          share: shareChildren,
-          shareLabel: `${formatNumber(shareChildren, 1)}%`,
+          share: 0,
+          shareLabel: "--",
           color: "#0EA5E9",
-          absoluteLabel: `${formatNumber(safeNumber(activeInsights.children_population))} residents`,
-          description: "Future workforce pipeline keeping Luxembourg innovative.",
+          absoluteLabel: "-- residents",
+          description:
+            "Select a dataset to reveal the youth base supporting Luxembourg's future workforce.",
         },
         {
           id: "working",
           label: "Working age 15-64",
-          share: workingShare,
-          shareLabel: `${formatNumber(workingShare, 1)}%`,
+          share: 0,
+          shareLabel: "--",
           color: "#4F46E5",
-          absoluteLabel: `${formatNumber(workingPopulation)} residents`,
-          description: "Active contributors sustaining pensions, care and growth.",
+          absoluteLabel: "-- residents",
+          description:
+            "Active population insights appear once a dataset with ageing summary is selected.",
         },
         {
           id: "seniors",
           label: "Seniors 65+",
-          share: shareSeniors,
-          shareLabel: `${formatNumber(shareSeniors, 1)}%`,
+          share: 0,
+          shareLabel: "--",
           color: "#F97316",
-          absoluteLabel: `${formatNumber(safeNumber(activeInsights.seniors_population))} residents`,
-          description: `${formatNumber(shareVeryOld, 1)}% are already 80+, raising longevity needs.`,
+          absoluteLabel: "-- residents",
+          description:
+            "Reveal longevity dynamics by loading a dataset enriched with ageing signals.",
         },
       ];
-    },
-    [activeInsights]
-  );
+    }
 
+    const shareChildren = clampShare(safeNumber(activeInsights.share_children));
+    const shareSeniors = clampShare(safeNumber(activeInsights.share_seniors));
+    const totalPopulation = safeNumber(activeInsights.population_total);
+    const workingPopulation = safeNumber(activeInsights.working_age_population);
+    const workingShare = totalPopulation
+      ? clampShare((workingPopulation / totalPopulation) * 100)
+      : clampShare(100 - shareChildren - shareSeniors);
+    const shareVeryOld = clampShare(safeNumber(activeInsights.share_80_plus));
+
+    return [
+      {
+        id: "children",
+        label: "Children 0-14",
+        share: shareChildren,
+        shareLabel: `${formatNumber(shareChildren, 1)}%`,
+        color: "#0EA5E9",
+        absoluteLabel: `${formatNumber(safeNumber(activeInsights.children_population))} residents`,
+        description: "Future workforce pipeline keeping Luxembourg innovative.",
+      },
+      {
+        id: "working",
+        label: "Working age 15-64",
+        share: workingShare,
+        shareLabel: `${formatNumber(workingShare, 1)}%`,
+        color: "#4F46E5",
+        absoluteLabel: `${formatNumber(workingPopulation)} residents`,
+        description: "Active contributors sustaining pensions, care and growth.",
+      },
+      {
+        id: "seniors",
+        label: "Seniors 65+",
+        share: shareSeniors,
+        shareLabel: `${formatNumber(shareSeniors, 1)}%`,
+        color: "#F97316",
+        absoluteLabel: `${formatNumber(safeNumber(activeInsights.seniors_population))} residents`,
+        description: `${formatNumber(shareVeryOld, 1)}% are already 80+, raising longevity needs.`,
+      },
+    ];
+  }, [activeInsights]);
   const readinessSignals = useMemo(() => {
     if (!activeInsights) {
       return [
@@ -1045,16 +1041,52 @@ const Home: React.FC = () => {
     return label ? `${label} (${categoryCode})` : categoryCode;
   };
 
-  const styles = (stylesData.styles ?? []) as StyleData[];
-  const pageStyle: React.CSSProperties =
-    page !== undefined
-      ? {
-          width: "100%",
-          ...applyStyle(`#${page.id}`, styles),
-        }
-      : {
-          width: "100%",
-        };
+  const styles = useMemo(
+    () => (stylesData.styles ?? []) as StyleData[],
+    []
+  );
+  const pageStyle: React.CSSProperties = useMemo(() => {
+    if (!page) {
+      return { width: "100%" };
+    }
+
+    const computed = {
+      ...(applyStyle(`#${page.id}`, styles) ?? {}),
+    } as Record<string, any>;
+
+    [
+      "padding",
+      "paddingLeft",
+      "paddingRight",
+      "paddingTop",
+      "paddingBottom",
+      "margin",
+      "marginLeft",
+      "marginRight",
+      "marginTop",
+      "marginBottom",
+      "display",
+      "flex",
+      "flexDirection",
+      "flexWrap",
+      "justifyContent",
+      "alignItems",
+      "alignContent",
+      "gap",
+      "rowGap",
+      "columnGap",
+      "width",
+    ].forEach((prop) => {
+      if (prop in computed) {
+        delete computed[prop];
+      }
+    });
+
+    return {
+      width: "100%",
+      ...(computed as React.CSSProperties),
+    };
+  }, [page, styles]);
 
   const generatedComponents = useMemo(
     () =>
