@@ -6,7 +6,7 @@ This project makes the data from LUSTAT more accessible to the people by providi
 
 
 **Key Features:**
-- Data integration via SDMX API from LUSTAT (lustat.statec.lu) (Note that, you can add addditional datasets from LUSTAT by adding API links from LUSTAT into the file called LustatCensus.txt, you will need to make sure to add "&format=jsondata" to the end of the API as this dashboard works with json data)
+- Data integration via SDMX API from LUSTAT (lustat.statec.lu)
 - Interactive visualizations of population structure, employment rates, pension systems, poverty indicators, and health metrics
 - Geographic analysis using Luxembourg administrative boundaries (shapefiles for communes)
 
