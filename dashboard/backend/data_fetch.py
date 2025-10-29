@@ -445,7 +445,7 @@ def fetch_data_recurrently(dataset_urls: Sequence[str]) -> None:
 
 
 def main() -> None:
-    urls_file = "LustatCensus.txt"
+    urls_file = "/database/LustatCensus.txt"
     try:
         dataset_urls = load_urls_from_file(urls_file)
         LOGGER.info("Loaded %d dataset URLs from %s", len(dataset_urls), urls_file)

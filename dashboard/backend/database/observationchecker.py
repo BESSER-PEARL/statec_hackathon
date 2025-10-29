@@ -1,6 +1,6 @@
 import json
 import os
-from sql_alchemy import (
+from dashboard.backend.sql_alchemy import (
     SessionLocal,
     Observation,
     ObservationDimensionValue,

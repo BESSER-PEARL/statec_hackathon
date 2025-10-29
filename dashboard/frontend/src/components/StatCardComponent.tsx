@@ -20,6 +20,7 @@ export const StatCardComponent: React.FC<StatCardComponentProps> = ({
     flexDirection: "column",
     justifyContent: "space-between",
     gap: "0.75rem",
+    height: "100%",
     backgroundColor: "#ffffff",
     borderRadius: "16px",
     padding: "1.5rem",
