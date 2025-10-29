@@ -1414,6 +1414,13 @@ const Home: React.FC = () => {
     <div className="page">
       <section className="hero">
         <div className="hero__content">
+          <div className="hero__brand">
+            <img
+              className="hero__logo"
+              src="/bemmsser_logo_light.png"
+              alt="Besser logo"
+            />
+          </div>
           <span className="hero__eyebrow">Ageing Luxembourg</span>
           <h1>Evidence hub for Luxembourg&apos;s demographic transition</h1>
           <p>
