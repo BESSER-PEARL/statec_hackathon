@@ -155,7 +155,7 @@
               }
             },
             {
-              "type": "pie-chart",
+              "type": "bar-chart",
               "id": "senior-gender-pie",
               "title": "Gender balance among seniors",
               "data_binding": {
@@ -174,7 +174,7 @@
               }
             },
             {
-              "type": "bar-chart",
+              "type": "pie-chart",
               "id": "senior-marital-status",
               "title": "Marital status of seniors",
               "color": "#0EA5E9",
