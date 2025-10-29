@@ -93,3 +93,10 @@ python run  -r dashboard/backend/database/agent.py
 - **Data Provider**: STATEC - National Institute of Statistics and Economic Studies
 
 *This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
+
+## Data note
+
+You can access the detailed [data card here](DATA_CARD.md).
+
+## Data note
+This project is licensed under the [`MIT license`](LICENSE.md).
