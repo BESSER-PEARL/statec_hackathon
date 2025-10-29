@@ -83,13 +83,6 @@ Finally, start the agent by exeucting the agent.py file located in dashboard/bac
 python run  -r dashboard/backend/database/agent.py
 ```
 
----
-
-### Data Sources
-All data accessed via official APIs:
-- **LUSTAT** (lustat.statec.lu) - STATEC's primary SDMX data portal
-- **Shapefiles** - Geographic boundaries from STATEC resources
-
 ## License & Deliverables
 
 - **Code License**: EUPL-1.2 (European Union Public License)
