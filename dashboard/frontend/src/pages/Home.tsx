@@ -20,6 +20,10 @@ import { Renderer } from "../components/Renderer";
 import { StatCardComponent } from "../components/StatCardComponent";
 import { applyStyle, StyleData } from "../utils/applyStyle";
 import MapComponent from "../components/MapComponent";
+import {
+  ASSISTANT_DATASET_EVENT,
+  type AssistantDatasetEvent
+} from "../events/assistantDataset";
 
 import "./Home.css";
 
@@ -91,6 +95,15 @@ type ObservationPoint = {
   time_period?: string | null;
   dimensions: Record<string, string>;
 };
+
+type AssistantSelectionStatus = "pending" | "applied" | "unavailable";
+
+interface AssistantSelectionIndicator {
+  datasetLabel: string;
+  datasetStatus: AssistantSelectionStatus;
+  dimensionLabel?: string;
+  dimensionStatus?: AssistantSelectionStatus;
+}
 
 const DEFAULT_DATASET_CODE = "DSD_CENSUS_GROUP1_3@DF_B1600";
 const mainPageId = "ageing-dashboard";
@@ -164,6 +177,10 @@ const Home: React.FC = () => {
 
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [selectedDataset, setSelectedDataset] = useState<string>(DEFAULT_DATASET_CODE);
+  const [datasetsLoaded, setDatasetsLoaded] = useState(false);
+  const [pendingAssistantSelection, setPendingAssistantSelection] = useState<{ dataset?: string; dimension?: string } | null>(null);
+  const [pendingDimension, setPendingDimension] = useState<string | null>(null);
+  const [assistantSelection, setAssistantSelection] = useState<AssistantSelectionIndicator | null>(null);
   const [datasetDetail, setDatasetDetail] = useState<DatasetDetail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
 
@@ -206,11 +223,103 @@ const Home: React.FC = () => {
         });
       } catch (error) {
         console.error(error);
+      } finally {
+        setDatasetsLoaded(true);
       }
     };
 
     fetchDatasets();
   }, []);
+
+  useEffect(() => {
+    const handler: EventListener = (event) => {
+      const customEvent = event as AssistantDatasetEvent;
+      const datasetName = customEvent.detail?.dataset?.trim();
+      const dimensionName = customEvent.detail?.dimension?.trim();
+
+      if (!datasetName && !dimensionName) {
+        return;
+      }
+
+      setPendingAssistantSelection({ dataset: datasetName || undefined, dimension: dimensionName || undefined });
+      setPendingDimension(null);
+      setAssistantSelection({
+        datasetLabel: datasetName || "",
+        datasetStatus: datasetName ? "pending" : "unavailable",
+        ...(dimensionName
+          ? {
+              dimensionLabel: dimensionName,
+              dimensionStatus: datasetName ? "pending" : "unavailable"
+            }
+          : {})
+      });
+    };
+
+    window.addEventListener(ASSISTANT_DATASET_EVENT, handler);
+    return () => {
+      window.removeEventListener(ASSISTANT_DATASET_EVENT, handler);
+    };
+  }, []);
+
+  const resolveDatasetCode = useCallback(
+    (value: string): string | null => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const lower = trimmed.toLowerCase();
+      const byCode = datasets.find((dataset) => dataset.code.toLowerCase() === lower);
+      if (byCode) {
+        return byCode.code;
+      }
+
+      const byName = datasets.find((dataset) => (dataset.name ?? "").toLowerCase() === lower);
+      if (byName) {
+        return byName.code;
+      }
+
+      return null;
+    },
+    [datasets]
+  );
+
+  useEffect(() => {
+    if (!pendingAssistantSelection?.dataset || !datasetsLoaded) {
+      return;
+    }
+
+    const datasetName = pendingAssistantSelection.dataset;
+    const resolvedCode = resolveDatasetCode(datasetName);
+
+    if (resolvedCode) {
+      setSelectedDataset(resolvedCode);
+      const datasetInfo = datasets.find((dataset) => dataset.code === resolvedCode);
+      setAssistantSelection({
+        datasetLabel: datasetInfo?.name || datasetInfo?.code || datasetName,
+        datasetStatus: "applied",
+        ...(pendingAssistantSelection.dimension
+          ? { dimensionLabel: pendingAssistantSelection.dimension, dimensionStatus: "pending" }
+          : {})
+      });
+      if (pendingAssistantSelection.dimension) {
+        setPendingDimension(pendingAssistantSelection.dimension);
+      } else {
+        setPendingDimension(null);
+      }
+    } else {
+      setAssistantSelection({
+        datasetLabel: datasetName,
+        datasetStatus: "unavailable",
+        ...(pendingAssistantSelection.dimension
+          ? { dimensionLabel: pendingAssistantSelection.dimension, dimensionStatus: "unavailable" }
+          : {})
+      });
+      setPendingDimension(null);
+    }
+
+    setPendingAssistantSelection(null);
+  }, [pendingAssistantSelection, datasetsLoaded, resolveDatasetCode, datasets]);
 
   useEffect(() => {
     if (!selectedDataset) {
@@ -257,6 +366,29 @@ const Home: React.FC = () => {
     [applicableDimensions]
   );
 
+  const resolveDimensionCode = useCallback(
+    (value: string): string | null => {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return null;
+      }
+
+      const lower = trimmed.toLowerCase();
+      const byCode = dimensionOptions.find((option) => option.value.toLowerCase() === lower);
+      if (byCode) {
+        return byCode.value;
+      }
+
+      const byLabel = dimensionOptions.find((option) => (option.label ?? "").toLowerCase() === lower);
+      if (byLabel) {
+        return byLabel.value;
+      }
+
+      return null;
+    },
+    [dimensionOptions]
+  );
+
   useEffect(() => {
     if (!datasetDetail || applicableDimensions.length === 0) {
       setSelectedDimension("");
@@ -275,6 +407,65 @@ const Home: React.FC = () => {
       return preferred?.code ?? applicableDimensions[0].code;
     });
   }, [datasetDetail, applicableDimensions]);
+
+  useEffect(() => {
+    if (!pendingDimension) {
+      return;
+    }
+
+    if (!datasetDetail || datasetDetail.code !== selectedDataset) {
+      return;
+    }
+
+    if (dimensionOptions.length === 0) {
+      if (applicableDimensions.length === 0) {
+        setAssistantSelection((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          return {
+            ...prev,
+            datasetStatus: prev.datasetStatus === "pending" ? "applied" : prev.datasetStatus,
+            dimensionLabel: prev.dimensionLabel ?? pendingDimension,
+            dimensionStatus: "unavailable"
+          };
+        });
+        setPendingDimension(null);
+      }
+      return;
+    }
+
+    const resolved = resolveDimensionCode(pendingDimension);
+    if (resolved) {
+      setSelectedDimension(resolved);
+      const option = dimensionOptions.find((entry) => entry.value === resolved);
+      setAssistantSelection((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          ...prev,
+          datasetStatus: prev.datasetStatus === "pending" ? "applied" : prev.datasetStatus,
+          dimensionLabel: option?.label || option?.value || pendingDimension,
+          dimensionStatus: "applied"
+        };
+      });
+    } else {
+      setAssistantSelection((prev) => {
+        if (!prev) {
+          return prev;
+        }
+        return {
+          ...prev,
+          datasetStatus: prev.datasetStatus === "pending" ? "applied" : prev.datasetStatus,
+          dimensionLabel: prev.dimensionLabel ?? pendingDimension,
+          dimensionStatus: "unavailable"
+        };
+      });
+    }
+
+    setPendingDimension(null);
+  }, [pendingDimension, dimensionOptions, resolveDimensionCode, datasetDetail, applicableDimensions, selectedDataset]);
 
   useEffect(() => {
     if (!selectedDataset) {
@@ -1098,6 +1289,30 @@ const Home: React.FC = () => {
     [page]
   );
 
+  const assistantNoteVariant = assistantSelection
+    ? assistantSelection.datasetStatus === "unavailable" || assistantSelection.dimensionStatus === "unavailable"
+      ? "unavailable"
+      : assistantSelection.datasetStatus === "pending" || assistantSelection.dimensionStatus === "pending"
+        ? "pending"
+        : "applied"
+    : null;
+
+  const dimensionStatusForDisplay: AssistantSelectionStatus | undefined = assistantSelection?.dimensionLabel
+    ? (assistantSelection.dimensionStatus ?? ("pending" as AssistantSelectionStatus))
+    : undefined;
+
+  const statusIconMap: Record<AssistantSelectionStatus, string> = {
+    pending: "⏳",
+    applied: "✅",
+    unavailable: "⚠️"
+  };
+
+  const statusTextMap: Record<AssistantSelectionStatus, string> = {
+    pending: "pending",
+    applied: "applied",
+    unavailable: "not available"
+  };
+
   return (
     <div className="page">
       <section className="hero">
@@ -1346,10 +1561,42 @@ const Home: React.FC = () => {
         <div className="playground__controls">
           <div className="playground__control">
             <label htmlFor="dataset-select">Dataset</label>
+            {assistantSelection && (
+              <div
+                className={`playground__assistant-note playground__assistant-note--${assistantNoteVariant ?? "pending"}`}
+              >
+                <span className="playground__assistant-note-line">
+                  <span aria-hidden="true">{statusIconMap[assistantSelection.datasetStatus]}</span>
+                  <span>
+                    <strong>Dataset:</strong> {assistantSelection.datasetLabel}{" "}
+                    <span className="playground__assistant-note-status">
+                      ({statusTextMap[assistantSelection.datasetStatus]})
+                    </span>
+                  </span>
+                </span>
+                {assistantSelection.dimensionLabel && dimensionStatusForDisplay && (
+                  <span className="playground__assistant-note-line">
+                    <span aria-hidden="true">{statusIconMap[dimensionStatusForDisplay]}</span>
+                    <span>
+                      <strong>Dimension:</strong> {assistantSelection.dimensionLabel}{" "}
+                      <span className="playground__assistant-note-status">
+                        ({statusTextMap[dimensionStatusForDisplay]})
+                      </span>
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
             <select
               id="dataset-select"
               value={selectedDataset}
-              onChange={(event) => setSelectedDataset(event.target.value)}
+              onChange={(event) => {
+                const nextDataset = event.target.value;
+                setSelectedDataset(nextDataset);
+                setAssistantSelection(null);
+                setPendingAssistantSelection(null);
+                setPendingDimension(null);
+              }}
             >
               {datasets.length === 0 && (
                 <option value={selectedDataset}>{selectedDataset}</option>
@@ -1367,7 +1614,12 @@ const Home: React.FC = () => {
             <select
               id="dimension-select"
               value={selectedDimension}
-              onChange={(event) => setSelectedDimension(event.target.value)}
+              onChange={(event) => {
+                setSelectedDimension(event.target.value);
+                setAssistantSelection(null);
+                setPendingAssistantSelection(null);
+                setPendingDimension(null);
+              }}
               disabled={dimensionOptions.length === 0}
             >
               {dimensionOptions.length === 0 ? (
