@@ -71,7 +71,7 @@ Install the agent's requirements by installing the requirements listed in dashbo
 pip install -r dashboard/backend/database/requirements.txt
 ```
 
-Add you OpenAI API Key to the config file dashboard/backend/database/config.ini
+Add you OpenAI API Key to the config file config.ini
 
 
 ```
