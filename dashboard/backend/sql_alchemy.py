@@ -142,7 +142,13 @@ class ObservationDimensionValue(Base):
 
 DATABASE_PATH = Path(__file__).resolve().parent / "Class_Diagram.db"
 DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
-engine = create_engine(DATABASE_URL, echo=False, future=True)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    connect_args={"check_same_thread": False},
+    pool_pre_ping=True,
+)
 SessionLocal = sessionmaker(bind=engine, expire_on_commit=False)
 
 

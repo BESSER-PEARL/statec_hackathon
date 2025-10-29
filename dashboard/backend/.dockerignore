@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+output_backend/
+Class_Diagram.db*
+*.sqlite
