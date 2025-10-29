@@ -18,7 +18,5 @@ This project curates open demographic and socio-economic indicators to analyse a
 ## Known Limitations & Biases
 - Only used the flat data from 2021, thus not the data timeseries option. 
 
-## Licences & Access
-- All ingested datasets are open, licensed under CC BY 4.0 (or equivalent). Licence notices are preserved in the repository.
-- No personal data are processed; only aggregated, anonymised statistics are stored.
+## Access
 - API rate limits and fair-use policies must be respected when refreshing data.
