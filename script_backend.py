@@ -42,8 +42,8 @@ def main():
     print("="*60)
     
     # Get the backend directory path
-    backend_dir = os.path.join(os.getcwd(), "dashboard", "backend")
-    requirements_file = os.path.join(backend_dir, "requirements.txt")
+
+    requirements_file = os.path.join( "requirements.txt")
     
     # Check if requirements.txt exists
     if not os.path.exists(requirements_file):
