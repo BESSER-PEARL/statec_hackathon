@@ -75,8 +75,6 @@ The page will reload automatically if you make edits. The React app connects to 
 ### Data Sources
 All data accessed via official APIs:
 - **LUSTAT** (lustat.statec.lu) - STATEC's primary SDMX data portal
-- **Eurostat** (ec.europa.eu/eurostat) - European statistics for comparisons
-- **Luxembourg Open Data Portal** (data.public.lu) - Additional datasets
 - **Shapefiles** - Geographic boundaries from STATEC resources
 
 ## License & Deliverables
@@ -94,10 +92,10 @@ All data accessed via official APIs:
 
 ---
 
-**Developed for**: STATEC Hackathon 2025 (October 27-29, 2025)
-**Challenge**: "Ageing Luxembourg" - Developing dashboards to analyze demographic shifts
-**Team**: LIST (Luxembourg Institute of Science and Technology) - BESSER-PEARL
-**Data Provider**: STATEC - National Institute of Statistics and Economic Studies
+- **Developed for**: STATEC Hackathon 2025 (October 27-29, 2025)
+- **Challenge**: "Ageing Luxembourg" - Developing dashboards to analyze demographic shifts
+- **Team**: LIST (Luxembourg Institute of Science and Technology) - BESSER-PEARL
+- **Data Provider**: STATEC - National Institute of Statistics and Economic Studies
 
 *This dashboard demonstrates how open statistical data can illuminate societal challenges and empower evidence-based decision-making in an ageing society.*
 
