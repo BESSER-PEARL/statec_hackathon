@@ -37,13 +37,14 @@ Follow these steps in order:
 **Step 1: Initialize the Database**
 ```bash
 # Run the data fetch script to populate the local database
-python database/data_fetch.py
+cd database
+python data_fetch.py
 ```
-This downloads data from LUSTAT SDMX API and creates a local database for the dashboard.
+This downloads data from LUSTAT SDMX API and creates a local database for the dashboard. Note that it might take a while to fetch the data.
 
 **Step 2: Install Backend Dependencies**
 ```bash
-cd dashboard/backend
+cd ../dashboard/backend
 pip install -r requirements.txt
 ```
 
@@ -56,7 +57,7 @@ The backend API will run on `http://localhost:5000` (or configured port).
 
 **Step 4: Install Frontend Dependencies**
 ```bash
-cd dashboard/frontend
+cd ../frontend
 npm install
 ```
 
