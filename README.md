@@ -25,7 +25,7 @@ This deliverable fulfills STATEC's mission to "produce a detailed, reliable, and
 ## How to Run It
 
 ### Prerequisites
-- Python 3.8+ (for database initialization and backend API)
+- Python 3.11 (for database initialization and backend API)
 - Node.js 16+ and npm (for React frontend)
 
 ### Setup Instructions
